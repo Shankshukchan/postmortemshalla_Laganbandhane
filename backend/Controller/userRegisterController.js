@@ -12,11 +12,7 @@ const userRegisterController = async (req, res) => {
             });
         }
         const hashedPassword = await bcrypt.hash(password, 10);
-        let profileImage = '';
-        if (req.file) {
-            profileImage = `/uploads/${req.file.filename}`;
-        }
-        const data = new userTable({ FullName, email, password: hashedPassword, profileImage });
+        const data = new userTable({ FullName, email, password: hashedPassword });
         await data.save();
         res.status(201).json({
             success: true,
