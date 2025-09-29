@@ -7,10 +7,19 @@ const Navbar = () => {
   const [profileImage, setProfileImage] = useState("/images/profile.jpg");
 
   useEffect(() => {
-    // fetch api to check user is logged in or not
-    const token = false
-    setIsLoggedIn(!!token);
-    const image = localStorage.getItem('userImage') || "/images/profile.jpg";
+    // Check localStorage for user login status
+    const user = localStorage.getItem('user');
+    const token = localStorage.getItem('token');
+    setIsLoggedIn(!!user && !!token);
+    let image = "/images/profile.jpg";
+    if (user) {
+      try {
+        const userObj = JSON.parse(user);
+        if (userObj.profileImage) {
+          image = userObj.profileImage;
+        }
+      } catch (e) {}
+    }
     setProfileImage(image);
   }, []);
 

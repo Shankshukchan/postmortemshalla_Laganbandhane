@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const { userTable } = require('../Model/table');
 const userRegisterController = async (req, res) => {
     try {
-        const { name, email, password } = req.body;
+        const {FullName, email, password } = req.body;
         //   new userTableSchema({name,email,password})
         const isFound = await userTable.findOne({ email });
         if (isFound) {
@@ -16,7 +16,7 @@ const userRegisterController = async (req, res) => {
         } else {
             // password encryption
             const hashedPassword = await bcrypt.hash(password, 10);
-            const data = new userTable({ name, email, password: hashedPassword });
+            const data = new userTable({FullName, email, password: hashedPassword });
             const result = await data.save();
             res.status(201).send({
                 success: true,
@@ -40,9 +40,9 @@ const userRegisterController = async (req, res) => {
 
 const userLoginController = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const {FullName, email, password } = req.body;
         const user = await userTable.findOne({ email });
-        if (user) {
+        if (user && user.FullName== FullName) {
             const isMatch = await bcrypt.compare(password, user.password);
             if (isMatch) {
                 const toekn = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1d' });

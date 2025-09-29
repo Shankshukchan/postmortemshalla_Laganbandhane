@@ -1,6 +1,65 @@
-import React from 'react'
+import { useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as yup from 'yup';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import swal from 'sweetalert';
+const loginApiUrl = import.meta.env.VITE_USER_LOGIN;
+
+const schema = yup.object().shape({
+  FullName: yup
+    .string()
+    .required("Full Name is required")
+    .min(2, "Full Name must be at least 2 characters"),
+  email: yup
+    .string()
+    .email("Enter a valid email")
+    .required("Email is required"),
+  password: yup
+    .string()
+    .min(6, "Password must be at least 6 characters")
+    .required("Password is required"),
+});
+  
+
 
 const Login = () => {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: yupResolver(schema),
+  });
+
+  const navigate = useNavigate();
+
+  async function handleData(data) {
+    try {
+      const res = await axios.post(loginApiUrl, data);
+      if (res.data && res.data.success) {
+        // Store user data and token in localStorage
+        localStorage.setItem('user', JSON.stringify(res.data.data));
+        if (res.data.toekn) {
+          localStorage.setItem('token', res.data.toekn);
+        }
+        await swal('Success', 'Login successful!', 'success');
+        navigate('/');
+      } else {
+        await swal('Error', 'Login failed. Please try again.', 'error');
+      }
+    } catch (error) {
+      if (error.response && error.response.data && error.response.data.message === 'Invalid email or password') {
+        await swal('Login Failed', 'Invalid email or password!', 'warning');
+      } else if (error.response && error.response.data && error.response.data.message === 'User not found, please register') {
+        await swal('Not Found', 'User not found, please register!', 'info');
+        navigate('/signup');
+      } else {
+        await swal('Error', 'Login failed. Please try again.', 'error');
+      }
+    }
+  }
+
   return (
    <>
    <div className="h-[100%] w-[100%] flex justify-around items-center ">
@@ -12,7 +71,7 @@ const Login = () => {
     />
   </div>
   <div className="  p-[5rem]   rounded-3xl shadow-2xl flex justify-center items-center text-center">
-    <form>
+  <form onSubmit={handleSubmit(handleData)}>
       <div>
         <img
           src="images/Untitled_design-removebg-preview.png"
@@ -21,30 +80,39 @@ const Login = () => {
         />
         <h1 className="text-[#6E1E1E] text-3xl font-bold mb-6 ">Login</h1>
         <input
-          className="w-full p-2 mb-6 text[#6E1E1E] border-1 rounded-md border-[#6E1E1E] outline-none focus:bg-gray-300"
+          className="w-full p-2 mb-1 text[#6E1E1E] border-1 rounded-md border-[#6E1E1E] outline-none focus:bg-gray-300"
           placeholder="Full Name"
           type="text"
           name="FullName"
-          required=""
+          {...register("FullName")}
         />
+        {errors.FullName && (
+          <p className="text-red-500 text-xs mb-4">{errors.FullName.message}</p>
+        )}
       </div>
       <div>
         <input
-          className="w-full p-2 mb-6 text[#6E1E1E] border-1 rounded-md border-[#6E1E1E] outline-none focus:bg-gray-300"
+          className="w-full p-2 mb-1 text[#6E1E1E] border-1 rounded-md border-[#6E1E1E] outline-none focus:bg-gray-300"
           type="email"
           name="email"
           placeholder="Email"
-          required=""
+          {...register("email")}
         />
+        {errors.email && (
+          <p className="text-red-500 text-xs mb-4">{errors.email.message}</p>
+        )}
       </div>
       <div>
         <input
-          className="w-full p-2 mb-6 text[#6E1E1E] border-1 rounded-md border-[#6E1E1E] outline-none focus:bg-gray-300"
+          className="w-full p-2 mb-1 text[#6E1E1E] border-1 rounded-md border-[#6E1E1E] outline-none focus:bg-gray-300"
           type="password"
           name="password"
-          placeholder="password"
-          required=""
+          placeholder="Password"
+          {...register("password")}
         />
+        {errors.password && (
+          <p className="text-red-500 text-xs mb-4">{errors.password.message}</p>
+        )}
       </div>
       <p className="text-[12px] text-right font-bold text-[#6E1E1E] hover:text-[#D4AF37] hover:text-shadow-[_1px_1px_rgb(110_30_30_/_1)] hover:text-shadow-[_-1px_-1px_rgb(110_30_30_/_1)]">
         <a href="">Forgot Password?</a>
@@ -58,14 +126,14 @@ const Login = () => {
           defaultValue="Login"
         />
       </div>
-      <p className="text-[12px] text-right font-bold text-[#6E1E1E]">
-        <a href="">New to Laganbandhane? </a>
-        <a
-          href=""
+      <p className="text-[12px] text-right font-bold text-[#6E1E1E] flex gap-2">
+        <p>New to Laganbandhane? </p>
+        <Link
+          to="/signup"
           className=" hover:text-[#D4AF37] hover:text-shadow-[_1px_1px_rgb(110_30_30_/_1)] hover:text-shadow-[_-1px_-1px_rgb(110_30_30_/_1)]"
         >
           Sign Up
-        </a>
+        </Link>
       </p>
     </form>
   </div>
