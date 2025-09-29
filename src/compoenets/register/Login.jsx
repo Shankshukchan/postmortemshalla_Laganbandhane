@@ -43,8 +43,16 @@ const Login = () => {
         if (res.data.toekn) {
           localStorage.setItem('token', res.data.toekn);
         }
-        await swal('Success', 'Login successful!', 'success');
-        navigate('/');
+        swal({
+          title: 'Success',
+          text: 'Login successful!',
+          icon: 'success',
+          timer: 2000,
+          buttons: false
+        });
+        setTimeout(() => {
+          navigate('/');
+        }, 2000);
       } else {
         await swal('Error', 'Login failed. Please try again.', 'error');
       }

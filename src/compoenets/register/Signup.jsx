@@ -38,9 +38,20 @@ const Signup = () => {
     resolver: yupResolver(schema),
   });
 
+  const [imageFile, setImageFile] = React.useState(null);
+
   async function handleData(data) {
     try {
-      const res = await axios.post(apiUrl, data);
+      const formData = new FormData();
+      formData.append('FullName', data.FullName);
+      formData.append('email', data.email);
+      formData.append('password', data.password);
+      if (imageFile) {
+        formData.append('profileImage', imageFile);
+      }
+      const res = await axios.post(apiUrl, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
       if (res.data && res.data.success) {
         await swal('Success', 'User registered successfully!', 'success');
         navigate('/login');
@@ -83,6 +94,16 @@ const Signup = () => {
                 name="FullName"
                 {...register("FullName")}
               />
+              <div className="mb-2 mt-2">
+                <label className="block text-sm font-medium">Profile Image</label>
+                <input
+                  type="file"
+                  name="profileImage"
+                  accept="image/*"
+                  onChange={e => setImageFile(e.target.files[0])}
+                  className="mt-1 w-full border rounded px-2 py-1"
+                />
+              </div>
               {errors.FullName && (
                 <p className="text-red-500 text-xs mb-4">{errors.FullName.message}</p>
               )}

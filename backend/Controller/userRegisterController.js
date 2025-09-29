@@ -1,5 +1,5 @@
 const { userTable } = require('../Model/table');
-const bcrypt = require('bcryptjs');
+const bcrypt = require("bcrypt");
 
 const userRegisterController = async (req, res) => {
     try {
@@ -12,7 +12,11 @@ const userRegisterController = async (req, res) => {
             });
         }
         const hashedPassword = await bcrypt.hash(password, 10);
-        const data = new userTable({ FullName, email, password: hashedPassword });
+        let profileImage = '';
+        if (req.file) {
+            profileImage = `/uploads/${req.file.filename}`;
+        }
+        const data = new userTable({ FullName, email, password: hashedPassword, profileImage });
         await data.save();
         res.status(201).json({
             success: true,

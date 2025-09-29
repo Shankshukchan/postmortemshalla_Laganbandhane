@@ -1,29 +1,25 @@
 
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { UserContext } from '../../UserContext';
 
 const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
-  const { user } = useContext(UserContext);
-  const isLoggedIn = user?.isLoggedIn;
   const [profileImage, setProfileImage] = useState("/images/profile.jpg");
-
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   useEffect(() => {
-    let image = "/images/profile.jpg";
-    if (user && user.image) {
-      // If backend path, use as is
-      image = user.image.startsWith('/uploads/') ? user.image : user.image;
+    function updateProfileImage() {
+      const user = JSON.parse(localStorage.getItem('user'));
+      setIsLoggedIn(!!user);
+      if (user && user.image) {
+        setProfileImage(user.image.startsWith('/uploads/') ? user.image : user.image);
+      } else {
+        setProfileImage("/images/profile.jpg");
+      }
     }
-    setProfileImage(image);
-  }, [user]);
-
-  useEffect(() => {
-    // If just logged in, update immediately
-    if (isLoggedIn && user && user.image) {
-      setProfileImage(user.image.startsWith('/uploads/') ? user.image : user.image);
-    }
-  }, [isLoggedIn, user]);
+    updateProfileImage();
+    window.addEventListener('storage', updateProfileImage);
+    return () => window.removeEventListener('storage', updateProfileImage);
+  }, []);
 
   const handleMenuOpen = () => setMenuOpen(true);
   const handleMenuClose = () => setMenuOpen(false);

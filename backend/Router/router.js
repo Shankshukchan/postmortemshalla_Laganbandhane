@@ -1,15 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const userRegisterController = require('../Controller/userRegisterController');
-const userLoginController = require('../Controller/userLoginController');
-const { uploadProfileImageController, updateUserProfileController } = require('../Controller/userProfileController');
 const uploadFile = require('../middleware/multer');
+const userLoginController = require('../Controller/userLoginController');
+const { updateUserProfileController } = require('../Controller/userProfileController');
 
-router.post('/register', userRegisterController);
+router.post('/register', uploadFile.single('profileImage'), userRegisterController);
 router.post('/login', userLoginController);
 
-// New route: update user details and profile image together
-router.post('/update-profile', uploadFile.single('profileImage'), updateUserProfileController);
-router.post('/upload-profile-image', uploadFile.single('profileImage'), uploadProfileImageController);
+// Route: update user details (no image upload)
+router.post('/update-profile', updateUserProfileController);
 
 module.exports = router;

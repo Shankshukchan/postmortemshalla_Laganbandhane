@@ -1,13 +1,13 @@
 
-import React, { useState, useContext } from "react";
+import React, { useState } from "react";
 import axios from "axios";
 import swal from "sweetalert";
-import { UserContext } from '../../../UserContext';
 
 import ProfileSidebar from "./ProfileSidebar";
 import PurchasesList from "./PurchasesList";
 import TransactionsList from "./TransactionsList";
 import PurchasedTemplates from "./PurchasedTemplates";
+const imageUrl=import.meta.env.VITE_PROFILE_IMAGE
 
 const UserDashboard = () => {
   // Placeholder data for purchases and transactions
@@ -58,9 +58,9 @@ const UserDashboard = () => {
     marriageStatus: "Single",
     userId: localStorage.getItem('userId') || '',
   });
+
   const [profileImage, setProfileImage] = useState(null);
   const [imageFile, setImageFile] = useState(null);
-  const { updateUserImage } = useContext(UserContext);
 
 
   const handleChange = (e) => {
@@ -91,30 +91,21 @@ const UserDashboard = () => {
       formData.append('profileImage', imageFile);
     }
     try {
-  const res = await axios.post('http://localhost:5000/api/update-profile', formData, {
+      const res = await axios.post(imageUrl, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       const data = res.data;
       if (data.success) {
         if (data.data.profileImage) {
           setProfileImage(data.data.profileImage);
-          updateUserImage(data.data.profileImage);
-          localStorage.setItem('userImage', data.data.profileImage);
+          localStorage.setItem('user', JSON.stringify({ ...profile, image: data.data.profileImage }));
         }
         swal({ title: "Profile updated successfully", icon: "success" });
       } else {
         swal({ title: data.message || "Profile update failed", icon: "error" });
       }
     } catch (err) {
-      let msg = "Profile update error";
-      if (err.response && err.response.data && err.response.data.message) {
-        msg += ": " + err.response.data.message;
-      } else if (err.message) {
-        msg += ": " + err.message;
-      }
-      swal({ title: msg, icon: "error" });
-      // Optionally log error to console for debugging
-      console.error("Image upload error:", err);
+      swal({ title: "Profile update error", icon: "error" });
     }
   };
 

@@ -23,7 +23,8 @@ import AdminDashboard from './compoenets/dashboards/admin-dashboard/AdminDashboa
 
 
 
-// ProtectedRoute for editor
+
+// ProtectedRoute for editor: only redirect to login if not logged in
 function ProtectedRoute({ children }) {
   const user = JSON.parse(localStorage.getItem('user'));
   const token = localStorage.getItem('token');
@@ -43,11 +44,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/templates" element={<Templates />} />
-          <Route path="/editor/:id" element={
-            <ProtectedRoute>
-              <Editor />
-            </ProtectedRoute>
-          } />
+          <Route path="/editor/:id" element={<Editor />} />
           <Route path="/contact-us" element={<ContactUs />} />
           <Route path="/about-us" element={<AboutUs />} />
           <Route path="/pricing" element={<Pricing />} />
