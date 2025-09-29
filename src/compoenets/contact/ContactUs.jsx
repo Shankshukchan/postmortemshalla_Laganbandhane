@@ -127,7 +127,7 @@ const ContactUs = () => (
 
 				{/* Floating WhatsApp Button */}
 				<a
-					href="https://wa.me/911234567890"
+					href="https://wa.me/8459498206"
 					target="_blank"
 					rel="noopener noreferrer"
 					className="fixed bottom-6 left-6 z-50 flex items-center gap-2 px-5 py-3 bg-green-500 text-white font-bold rounded-full shadow-lg hover:bg-green-600 transition text-base"
