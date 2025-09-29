@@ -3,7 +3,7 @@ const ProfileSidebar = ({ profile, profileImage, handleChange, handleSubmit }) =
   <div className="md:col-span-1 bg-white rounded-lg shadow p-6 flex flex-col items-center">
     <div className="w-24 h-24 rounded-full bg-gray-200 mb-4 flex items-center justify-center text-3xl font-bold text-gray-500 overflow-hidden">
       {profileImage ? (
-        <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
+        <img src={profileImage.startsWith('/uploads/') ? profileImage : profileImage} alt="Profile" className="w-full h-full object-cover" />
       ) : (
         <span>{profile.name ? profile.name[0] : "U"}</span>
       )}

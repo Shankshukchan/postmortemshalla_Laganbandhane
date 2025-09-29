@@ -5,9 +5,9 @@ const PurchasedTemplates = ({ templates }) => (
   <div className="bg-white rounded-lg shadow p-6">
     <h3 className="text-lg font-semibold mb-4 text-[#D4AF37]">Recently Purchased Templates</h3>
     <div className="flex gap-6 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-[#D4AF37]/60 scrollbar-track-[#FFF8F0]">
-      {templates.map((tpl) => (
+      {templates.map((tpl, idx) => (
         <div
-          key={tpl.id}
+          key={tpl.id + '-' + idx}
           className="min-w-[320px] max-w-xs border border-[#D4AF37]/30 rounded-lg p-4 flex flex-col items-center gap-4 bg-[#FFF8F0] hover:shadow-lg transition flex-shrink-0"
         >
           <img

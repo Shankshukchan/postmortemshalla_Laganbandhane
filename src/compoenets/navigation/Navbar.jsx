@@ -1,27 +1,29 @@
-  import React, { useState, useEffect } from "react";
+
+import React, { useState, useEffect, useContext } from "react";
 import { Link } from "react-router-dom";
+import { UserContext } from '../../UserContext';
 
 const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { user } = useContext(UserContext);
+  const isLoggedIn = user?.isLoggedIn;
   const [profileImage, setProfileImage] = useState("/images/profile.jpg");
 
   useEffect(() => {
-    // Check localStorage for user login status
-    const user = localStorage.getItem('user');
-    const token = localStorage.getItem('token');
-    setIsLoggedIn(!!user && !!token);
     let image = "/images/profile.jpg";
-    if (user) {
-      try {
-        const userObj = JSON.parse(user);
-        if (userObj.profileImage) {
-          image = userObj.profileImage;
-        }
-      } catch (e) {}
+    if (user && user.image) {
+      // If backend path, use as is
+      image = user.image.startsWith('/uploads/') ? user.image : user.image;
     }
     setProfileImage(image);
-  }, []);
+  }, [user]);
+
+  useEffect(() => {
+    // If just logged in, update immediately
+    if (isLoggedIn && user && user.image) {
+      setProfileImage(user.image.startsWith('/uploads/') ? user.image : user.image);
+    }
+  }, [isLoggedIn, user]);
 
   const handleMenuOpen = () => setMenuOpen(true);
   const handleMenuClose = () => setMenuOpen(false);

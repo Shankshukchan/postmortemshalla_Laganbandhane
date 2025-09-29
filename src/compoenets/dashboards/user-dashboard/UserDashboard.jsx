@@ -1,6 +1,8 @@
 
-import React, { useState } from "react";
-import swal from "sweetalert"
+import React, { useState, useContext } from "react";
+import axios from "axios";
+import swal from "sweetalert";
+import { UserContext } from '../../../UserContext';
 
 import ProfileSidebar from "./ProfileSidebar";
 import PurchasesList from "./PurchasesList";
@@ -12,7 +14,7 @@ const UserDashboard = () => {
   const [purchases] = useState([
     { id: 1, item: "Premium Template", date: "2025-09-20", amount: 499 },
     { id: 2, item: "Consultation", date: "2025-09-15", amount: 999 },
-        { id: 2, item: "Consultation", date: "2025-09-15", amount: 999 },
+    { id: 3, item: "Consultation", date: "2025-09-15", amount: 999 },
   ]);
   const [transactions] = useState([
     { id: 1, type: "Credit", date: "2025-09-20", amount: 499 },
@@ -44,6 +46,7 @@ const UserDashboard = () => {
   ]);
 
 
+
   // Profile state
   const [profile, setProfile] = useState({
     name: "",
@@ -53,28 +56,66 @@ const UserDashboard = () => {
     religion: "",
     age: "",
     marriageStatus: "Single",
+    userId: localStorage.getItem('userId') || '',
   });
   const [profileImage, setProfileImage] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
+  const { updateUserImage } = useContext(UserContext);
+
 
   const handleChange = (e) => {
     if (e.target.name === "profileImage") {
       const file = e.target.files[0];
       if (file) {
         setProfileImage(URL.createObjectURL(file));
+        setImageFile(file);
       }
     } else {
       setProfile({ ...profile, [e.target.name]: e.target.value });
     }
   };
 
-  const handleSubmit = (e) => {
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Handle profile update logic here
-   swal({
-  title: "Profile updated sucessfully",
-  
-  icon: "success",
-});
+    const formData = new FormData();
+    formData.append('userId', profile.userId);
+    formData.append('FullName', profile.name);
+    formData.append('email', profile.email);
+    formData.append('birthdate', profile.birthdate);
+    formData.append('caste', profile.caste);
+    formData.append('religion', profile.religion);
+    formData.append('age', profile.age);
+    formData.append('marriageStatus', profile.marriageStatus);
+    if (imageFile) {
+      formData.append('profileImage', imageFile);
+    }
+    try {
+  const res = await axios.post('http://localhost:5000/api/update-profile', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      const data = res.data;
+      if (data.success) {
+        if (data.data.profileImage) {
+          setProfileImage(data.data.profileImage);
+          updateUserImage(data.data.profileImage);
+          localStorage.setItem('userImage', data.data.profileImage);
+        }
+        swal({ title: "Profile updated successfully", icon: "success" });
+      } else {
+        swal({ title: data.message || "Profile update failed", icon: "error" });
+      }
+    } catch (err) {
+      let msg = "Profile update error";
+      if (err.response && err.response.data && err.response.data.message) {
+        msg += ": " + err.response.data.message;
+      } else if (err.message) {
+        msg += ": " + err.message;
+      }
+      swal({ title: msg, icon: "error" });
+      // Optionally log error to console for debugging
+      console.error("Image upload error:", err);
+    }
   };
 
   return (
