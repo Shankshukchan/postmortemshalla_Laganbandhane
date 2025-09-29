@@ -8,7 +8,7 @@ const Navbar = () => {
 
   useEffect(() => {
     // fetch api to check user is logged in or not
-    const token = false
+    const token = true
     setIsLoggedIn(!!token);
     const image = localStorage.getItem('userImage') || "/images/profile.jpg";
     setProfileImage(image);
