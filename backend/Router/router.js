@@ -8,7 +8,7 @@ const { updateUserProfileController } = require('../Controller/userProfileContro
 router.post('/register', userRegisterController);
 router.post('/login', userLoginController);
 
-// Route: update user details (no image upload)
-router.post('/update-profile', updateUserProfileController);
+// Route: update user details (with image upload)
+router.post('/update-profile', uploadFile.single('profileImage'), updateUserProfileController);
 
 module.exports = router;

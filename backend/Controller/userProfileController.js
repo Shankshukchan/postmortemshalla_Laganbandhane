@@ -1,14 +1,25 @@
 const { userTable } = require('../Model/table');
 
-// Basic user profile update controller (no image upload)
+
+// User profile update controller with image upload
 const updateUserProfileController = async (req, res) => {
     try {
-        const { userId, FullName, email } = req.body;
+        const { email, FullName, birthdate, caste, religion, age, marriageStatus } = req.body;
+        if (!email) {
+            return res.status(400).json({ success: false, message: 'Email is required' });
+        }
         let updateData = { updatedAt: Date.now() };
         if (FullName) updateData.FullName = FullName;
-        if (email) updateData.email = email;
-        const user = await userTable.findByIdAndUpdate(
-            userId,
+        if (birthdate) updateData.birthdate = birthdate;
+        if (caste) updateData.caste = caste;
+        if (religion) updateData.religion = religion;
+        if (age) updateData.age = age;
+        if (marriageStatus) updateData.marriageStatus = marriageStatus;
+        if (req.file) {
+            updateData.profileImage = `/uploads/${req.file.filename}`;
+        }
+        const user = await userTable.findOneAndUpdate(
+            { email },
             updateData,
             { new: true }
         );
