@@ -19,8 +19,10 @@ const Editor = () => {
   ];
   // Admin-uploaded borders (add more as needed)
   const adminBorders = [
-    '/images/fav-removebg-preview.png',
-    '/images/border.png',
+    '/images/images.png',
+    '/images/images.jpeg',
+    "/images/u1.png",
+    "/images/u2.png"
   ];
   const [photo, setPhoto] = useState(adminPhotos[0]);
   const [border, setBorder] = useState('');

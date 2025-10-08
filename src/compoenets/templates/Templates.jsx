@@ -52,8 +52,17 @@ const Templates = () => {
   }, {});
 
   const handleTemplateClick = (template) => {
+  const userEmail = localStorage.getItem("user"); 
+
+  
+
+  if (!userEmail) {
+    navigate("/login");
+  } else {
     navigate(`/editor/${template.id}`, { state: { template } });
-  };
+  }
+};
+
 
   if (loading) return <div>Loading templates...</div>;
   if (error) return <div>{error}</div>;
