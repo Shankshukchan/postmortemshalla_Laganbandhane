@@ -158,7 +158,7 @@ const UserDashboard = () => {
   };
 
   // Load stored image from localStorage first
-  useEffect(() => {
+  useEffect(() => {;
     try {
       const stored = localStorage.getItem("user");
       if (stored) {
