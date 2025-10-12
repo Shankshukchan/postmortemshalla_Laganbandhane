@@ -3,29 +3,33 @@ import { Link } from "react-router-dom";
 import { UserContext } from "../../UserContext";
 
 const Navbar = () => {
-
-  
+  // Utility to normalize image paths
+  const normalizeImagePath = (src) => {
+    if (!src) return "/images/profile.jpg";
+    if (
+      src.startsWith("data:") ||
+      src.startsWith("http://") ||
+      src.startsWith("https://") ||
+      src.startsWith("blob:")
+    )
+      return src;
+    if (src.startsWith("/uploads/")) return src;
+    if (src.startsWith("uploads/")) return `/${src}`;
+    const normalized = src.replace(/\\/g, "/");
+    if (normalized.includes("/uploads/")) {
+      return encodeURI(normalized.slice(normalized.indexOf("/uploads/")));
+    }
+    const parts = normalized.split("/");
+    const basename = parts[parts.length - 1] || src;
+    return encodeURI(`/uploads/${basename}`);
+  };
   const [menuOpen, setMenuOpen] = useState(false);
   const { user } = useContext(UserContext);
-  const [profileImage, setProfileImage] = useState("/images/profile.jpg");
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  // Use image from context, always up-to-date
+  const profileImage = normalizeImagePath(user?.image);
+  const isLoggedIn = !!user?.isLoggedIn;
 
-  useEffect(() => {
-    // ✅ Check localStorage first (this is how UserDashboard usually works)
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      const parsedUser = JSON.parse(storedUser);
-      setIsLoggedIn(!!parsedUser?.isLoggedIn);
-      setProfileImage(parsedUser?.image || "/images/profile.jpg");
-    }
-
-    // ✅ Also update if user context changes (optional but good)
-    if (user && user.isLoggedIn) {
-      setIsLoggedIn(true);
-      setProfileImage(user.image || "/images/profile.jpg");
-    }
-  }, [user]);
-
+  // No need for localStorage or effect, context handles updates
   const handleMenuOpen = () => setMenuOpen(true);
   const handleMenuClose = () => setMenuOpen(false);
 
@@ -45,19 +49,29 @@ const Navbar = () => {
         <div className="hidden lg:block">
           <ul className="flex justify-between items-center gap-8 text-[#6E1E1E] font-bold">
             <li>
-              <Link to="/" className="hover:text-[#D4AF37]">Home</Link>
+              <Link to="/" className="hover:text-[#D4AF37]">
+                Home
+              </Link>
             </li>
             <li>
-              <Link to="/templates" className="hover:text-[#D4AF37]">Templates</Link>
+              <Link to="/templates" className="hover:text-[#D4AF37]">
+                Templates
+              </Link>
             </li>
             <li>
-              <Link to="/pricing" className="hover:text-[#D4AF37]">Pricing</Link>
+              <Link to="/pricing" className="hover:text-[#D4AF37]">
+                Pricing
+              </Link>
             </li>
             <li>
-              <Link to="/about-us" className="hover:text-[#D4AF37]">About Us</Link>
+              <Link to="/about-us" className="hover:text-[#D4AF37]">
+                About Us
+              </Link>
             </li>
             <li>
-              <Link to="/contact-us" className="hover:text-[#D4AF37]">Contact Us</Link>
+              <Link to="/contact-us" className="hover:text-[#D4AF37]">
+                Contact Us
+              </Link>
             </li>
 
             {isLoggedIn ? (
@@ -98,7 +112,11 @@ const Navbar = () => {
             strokeWidth="2"
             viewBox="0 0 24 24"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M4 6h16M4 12h16M4 18h16"
+            />
           </svg>
         </button>
 
@@ -120,16 +138,32 @@ const Navbar = () => {
               strokeWidth="2"
               viewBox="0 0 24 24"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
 
-          <Link to="/" className="hover:text-[#D4AF37]">Home</Link>
-          <Link to="/templates" className="hover:text-[#D4AF37]">Templates</Link>
-          <Link to="/how-it-works" className="hover:text-[#D4AF37]">How it Works</Link>
-          <Link to="/pricing" className="hover:text-[#D4AF37]">Pricing</Link>
-          <Link to="/about-us" className="hover:text-[#D4AF37]">About Us</Link>
-          <Link to="/contact-us" className="hover:text-[#D4AF37]">Contact</Link>
+          <Link to="/" className="hover:text-[#D4AF37]">
+            Home
+          </Link>
+          <Link to="/templates" className="hover:text-[#D4AF37]">
+            Templates
+          </Link>
+          <Link to="/how-it-works" className="hover:text-[#D4AF37]">
+            How it Works
+          </Link>
+          <Link to="/pricing" className="hover:text-[#D4AF37]">
+            Pricing
+          </Link>
+          <Link to="/about-us" className="hover:text-[#D4AF37]">
+            About Us
+          </Link>
+          <Link to="/contact-us" className="hover:text-[#D4AF37]">
+            Contact
+          </Link>
 
           {isLoggedIn ? (
             <Link to="/user-dashboard">

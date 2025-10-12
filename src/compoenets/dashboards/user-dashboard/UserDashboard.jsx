@@ -134,7 +134,10 @@ const UserDashboard = () => {
             const blob = await imageRes.blob();
             const url = URL.createObjectURL(blob);
             setProfileImage(url);
-            localStorage.setItem("user", JSON.stringify({ ...data, image: url }));
+            localStorage.setItem(
+              "user",
+              JSON.stringify({ ...data, image: url })
+            );
           } else {
             const normalized = normalizeImagePath(data.profileImage || null);
             setProfileImage(normalized);
@@ -158,7 +161,7 @@ const UserDashboard = () => {
   };
 
   // Load stored image from localStorage first
-  useEffect(() => {;
+  useEffect(() => {
     try {
       const stored = localStorage.getItem("user");
       if (stored) {

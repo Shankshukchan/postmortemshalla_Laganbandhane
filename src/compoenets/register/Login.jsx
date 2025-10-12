@@ -4,6 +4,8 @@ import * as yup from "yup";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import swal from "sweetalert";
+import React, { useContext } from "react";
+import { UserContext } from "../../UserContext";
 const loginApiUrl = import.meta.env.VITE_USER_LOGIN;
 
 const schema = yup.object().shape({
@@ -22,6 +24,7 @@ const schema = yup.object().shape({
 });
 
 const Login = () => {
+  const { updateUserImage, setLoginState } = useContext(UserContext);
   const {
     register,
     handleSubmit,
@@ -61,7 +64,11 @@ const Login = () => {
         try {
           if (profileImagePath)
             localStorage.setItem("userImage", profileImagePath);
+          // Update context image
+          updateUserImage(profileImagePath);
         } catch (e) {}
+        // Set login state in context
+        setLoginState(true);
         swal({
           title: "Success",
           text: "Login successful!",

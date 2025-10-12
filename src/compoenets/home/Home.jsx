@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
+import { UserContext } from "../../UserContext";
 import CountUp from "react-countup";
 import HeroSection from "./HeroSection";
 import HowItWorks from "./HowItWorks";
@@ -48,6 +49,80 @@ const features = [
 ];
 
 const Home = () => {
+  const { updateUserImage } = useContext(UserContext);
+  // Utility to normalize image paths
+  const normalizeImagePath = (src) => {
+    if (!src) return null;
+    try {
+      const s = String(src);
+      if (
+        s.startsWith("data:") ||
+        s.startsWith("http://") ||
+        s.startsWith("https://") ||
+        s.startsWith("blob:")
+      )
+        return s;
+      const normalized = s.replace(/\\/g, "/");
+      if (normalized.startsWith("/uploads/")) return encodeURI(normalized);
+      if (normalized.includes("/uploads/")) {
+        return encodeURI(normalized.slice(normalized.indexOf("/uploads/")));
+      }
+      const parts = normalized.split("/");
+      const basename = parts[parts.length - 1] || normalized;
+      return encodeURI(`/uploads/${basename}`);
+    } catch (e) {
+      return src;
+    }
+  };
+
+  // Fetch profile image and update context after login
+  useEffect(() => {
+    const fetchProfileImage = async () => {
+      const userId = localStorage.getItem("userId");
+      if (!userId) return;
+      const token = localStorage.getItem("token");
+      const profileFetchUrl = import.meta.env.VITE_PROFILE_FETCH_URL;
+      try {
+        const res = await fetch(`${profileFetchUrl}?userId=${userId}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        const result = await res.json();
+        if (result && result.success && result.data) {
+          const data = result.data;
+          let backendOrigin = "";
+          try {
+            backendOrigin = new URL(profileFetchUrl).origin;
+          } catch (e) {
+            backendOrigin = import.meta.env.VITE_BACKEND_BASE || "";
+          }
+          let finalImage = null;
+          if (data.profileImage) {
+            const imageRes = await fetch(
+              `${backendOrigin}/api/profile-image/${userId}`,
+              { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+            );
+            if (imageRes.ok) {
+              const blob = await imageRes.blob();
+              const url = URL.createObjectURL(blob);
+              finalImage = url;
+            } else {
+              finalImage = normalizeImagePath(data.profileImage || null);
+            }
+          } else {
+            finalImage = normalizeImagePath(null);
+          }
+          // Update context
+          updateUserImage(finalImage);
+        }
+      } catch (err) {
+        // ignore errors
+      }
+    };
+    // Only fetch after login
+    if (localStorage.getItem("token")) {
+      fetchProfileImage();
+    }
+  }, []);
   // Reload homepage once per visit
   useEffect(() => {
     if (!sessionStorage.getItem("homeReloaded")) {

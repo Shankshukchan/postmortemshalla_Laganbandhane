@@ -80,6 +80,8 @@ app.use(cors(corsOptions));
 app.use(express.json());
 // Serve images folder statically
 app.use("/images", express.static(imagesDir));
+// Serve uploads folder statically for profile images
+app.use("/uploads", express.static(uploadsDir));
 
 // Example user creation route with image upload
 app.post("/api/users", upload.single("image"), async (req, res) => {
