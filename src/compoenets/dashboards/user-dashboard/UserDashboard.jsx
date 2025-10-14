@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from "react";
 import axios from "axios";
 import swal from "sweetalert";
+import { useNavigate } from "react-router-dom";
 
 import ProfileSidebar from "./ProfileSidebar";
 import { UserContext } from "../../../UserContext";
@@ -13,6 +14,7 @@ const profileFetchUrl = import.meta.env.VITE_PROFILE_FETCH_URL;
 
 const UserDashboard = () => {
   const userContext = useContext(UserContext);
+  const navigate = useNavigate();
 
   // Demo data (can be replaced with backend data)
   const [purchases] = useState([
@@ -259,6 +261,28 @@ const UserDashboard = () => {
         />
         {/* Main Content */}
         <div className="md:col-span-2 flex flex-col gap-8">
+          <button
+            className="bg-[#6E1E1E] text-white px-4 py-2 rounded-lg self-end mb-4 hover:bg-[#D4AF37] hover:text-[#6E1E1E] font-semibold"
+            onClick={() => {
+              // Clear localStorage and context
+              localStorage.clear();
+              if (userContext && typeof userContext.setUser === "function") {
+                userContext.setUser({
+                  isLoggedIn: false,
+                  image: "/images/profile.jpg",
+                });
+              }
+              // Navigate to home page
+              navigate("/");
+              setTimeout(() => {
+                if (window.location.pathname === "/") {
+                  window.location.reload();
+                }
+              }, 500);
+            }}
+          >
+            Logout
+          </button>
           <PurchasedTemplates templates={purchasedTemplates} />
           <PurchasesList purchases={purchases} />
           <TransactionsList transactions={transactions} />
