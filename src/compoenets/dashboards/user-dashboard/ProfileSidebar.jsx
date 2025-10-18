@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
+import { LanguageContext } from "../../../LanguageContext";
 
 const ProfileSidebar = ({
   profile,
@@ -85,6 +86,8 @@ const ProfileSidebar = ({
     }
   };
 
+  const { t } = useContext(LanguageContext);
+
   return (
     <div className="md:col-span-1 bg-white rounded-lg shadow p-6 flex flex-col items-center">
       <div className="w-24 h-24 rounded-full bg-gray-200 mb-4 flex items-center justify-center text-3xl font-bold text-gray-500 overflow-hidden">
@@ -103,9 +106,11 @@ const ProfileSidebar = ({
         {profile.name || "User Name"}
       </h2>
       <p className="text-gray-500 mb-4">{profile.email || "user@email.com"}</p>
+      {/* Use translations for form labels/buttons */}
+
       <form className="w-full" onSubmit={handleSubmit}>
         <div className="mb-2">
-          <label className="block text-sm font-medium">Profile Image</label>
+          <label className="block text-sm font-medium">{t.profileImage}</label>
           <input
             type="file"
             name="profileImage"
@@ -115,7 +120,7 @@ const ProfileSidebar = ({
           />
         </div>
         <div className="mb-2">
-          <label className="block text-sm font-medium">Name</label>
+          <label className="block text-sm font-medium">{t.name}</label>
           <input
             type="text"
             name="name"
@@ -126,7 +131,7 @@ const ProfileSidebar = ({
           />
         </div>
         <div className="mb-2">
-          <label className="block text-sm font-medium">Email</label>
+          <label className="block text-sm font-medium">{t.email}</label>
           <input
             type="email"
             name="email"
@@ -137,7 +142,7 @@ const ProfileSidebar = ({
           />
         </div>
         <div className="mb-2">
-          <label className="block text-sm font-medium">Birthdate</label>
+          <label className="block text-sm font-medium">{t.birthdate}</label>
           <input
             type="date"
             name="birthdate"
@@ -148,7 +153,7 @@ const ProfileSidebar = ({
           />
         </div>
         <div className="mb-2">
-          <label className="block text-sm font-medium">Caste</label>
+          <label className="block text-sm font-medium">{t.caste}</label>
           <input
             type="text"
             name="caste"
@@ -158,7 +163,7 @@ const ProfileSidebar = ({
           />
         </div>
         <div className="mb-2">
-          <label className="block text-sm font-medium">Religion</label>
+          <label className="block text-sm font-medium">{t.religion}</label>
           <input
             type="text"
             name="religion"
@@ -168,7 +173,7 @@ const ProfileSidebar = ({
           />
         </div>
         <div className="mb-2">
-          <label className="block text-sm font-medium">Age</label>
+          <label className="block text-sm font-medium">{t.age}</label>
           <input
             type="number"
             name="age"
@@ -179,17 +184,19 @@ const ProfileSidebar = ({
           />
         </div>
         <div className="mb-4">
-          <label className="block text-sm font-medium">Marriage Status</label>
+          <label className="block text-sm font-medium">
+            {t.marriageStatus}
+          </label>
           <select
             name="marriageStatus"
             value={profile.marriageStatus}
             onChange={handleChange}
             className="mt-1 w-full border rounded px-2 py-1"
           >
-            <option value="Single">Single</option>
-            <option value="Married">Married</option>
-            <option value="Divorced">Divorced</option>
-            <option value="Widowed">Widowed</option>
+            <option value="Single">{t.single}</option>
+            <option value="Married">{t.married}</option>
+            <option value="Divorced">{t.divorced}</option>
+            <option value="Widowed">{t.widowed}</option>
           </select>
         </div>
         <button
@@ -221,10 +228,10 @@ const ProfileSidebar = ({
                   d="M4 12a8 8 0 018-8v8z"
                 ></path>
               </svg>
-              Uploading...
+              {t.uploading}
             </span>
           ) : (
-            "Update Profile"
+            t.updateProfile
           )}
         </button>
       </form>

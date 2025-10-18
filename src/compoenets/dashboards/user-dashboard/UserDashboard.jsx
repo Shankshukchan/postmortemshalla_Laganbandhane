@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
+import { LanguageContext } from "../../../LanguageContext";
 import axios from "axios";
 import swal from "sweetalert";
 import { useNavigate } from "react-router-dom";
@@ -222,7 +223,7 @@ const UserDashboard = () => {
       const data = res.data;
       if (data.success) {
         swal({
-          title: "Profile updated successfully",
+          title: t.profileUpdateSuccess,
           icon: "success",
           buttons: false,
           timer: 800,
@@ -236,16 +237,18 @@ const UserDashboard = () => {
           userContext.updateUserImage(profileImage);
         }
       } else {
-        swal({ title: data.message || "Profile update failed", icon: "error" });
+        swal({ title: data.message || t.profileUpdateFailed, icon: "error" });
       }
     } catch (err) {
       console.error("Profile update error:", err);
-      swal({ title: "Profile update error", icon: "error" });
+      swal({ title: t.profileUpdateError, icon: "error" });
     } finally {
       setUploading(false);
       setImageFile(null);
     }
   };
+
+  const { t } = useContext(LanguageContext);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#FFF8F0] to-[#FDF6EC] p-4 md:p-8">
@@ -281,7 +284,7 @@ const UserDashboard = () => {
               }, 500);
             }}
           >
-            Logout
+            {t.logout}
           </button>
           <PurchasedTemplates templates={purchasedTemplates} />
           <PurchasesList purchases={purchases} />

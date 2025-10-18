@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useContext } from "react";
 import { Link } from "react-router-dom";
 import { UserContext } from "../../UserContext";
+import { LanguageContext } from "../../LanguageContext";
 
 const Navbar = () => {
   // Utility to normalize image paths
@@ -25,6 +26,7 @@ const Navbar = () => {
   };
   const [menuOpen, setMenuOpen] = useState(false);
   const { user } = useContext(UserContext);
+  const { language, setLanguage, t } = useContext(LanguageContext);
   // Use image from context, always up-to-date
   const profileImage = normalizeImagePath(user?.image);
   const isLoggedIn = !!user?.isLoggedIn;
@@ -32,6 +34,11 @@ const Navbar = () => {
   // No need for localStorage or effect, context handles updates
   const handleMenuOpen = () => setMenuOpen(true);
   const handleMenuClose = () => setMenuOpen(false);
+
+  // Language switcher handler
+  const handleLanguageChange = (e) => {
+    setLanguage(e.target.value);
+  };
 
   return (
     <section className="sticky top-0 left-0 w-full z-50">
@@ -50,28 +57,41 @@ const Navbar = () => {
           <ul className="flex justify-between items-center gap-8 text-[#6E1E1E] font-bold">
             <li>
               <Link to="/" className="hover:text-[#D4AF37]">
-                Home
+                {t.home}
               </Link>
             </li>
             <li>
               <Link to="/templates" className="hover:text-[#D4AF37]">
-                Templates
+                {t.templates}
               </Link>
             </li>
             <li>
               <Link to="/pricing" className="hover:text-[#D4AF37]">
-                Pricing
+                {t.pricing}
               </Link>
             </li>
             <li>
               <Link to="/about-us" className="hover:text-[#D4AF37]">
-                About Us
+                {t.aboutUs}
               </Link>
             </li>
             <li>
               <Link to="/contact-us" className="hover:text-[#D4AF37]">
-                Contact Us
+                {t.contactUs}
               </Link>
+            </li>
+
+            {/* Language Switcher */}
+            <li>
+              <select
+                value={language}
+                onChange={handleLanguageChange}
+                className="bg-[#D4AF37] text-[#6E1E1E] px-2 py-1 rounded-lg font-semibold border border-[#6E1E1E]"
+                aria-label={t.selectLanguageLabel || "Select Language"}
+              >
+                <option value="en">{t.languageEnglish || "English"}</option>
+                <option value="mr">{t.languageMarathi || "मराठी"}</option>
+              </select>
             </li>
 
             {isLoggedIn ? (
@@ -92,7 +112,7 @@ const Navbar = () => {
                   to="/login"
                   className="bg-[#6E1E1E] text-white px-5 py-2 rounded-lg hover:bg-[#D4AF37] hover:text-[#6E1E1E] transition font-semibold"
                 >
-                  Login / Register
+                  {t.login}
                 </Link>
               </li>
             )}
@@ -147,22 +167,22 @@ const Navbar = () => {
           </button>
 
           <Link to="/" className="hover:text-[#D4AF37]">
-            Home
+            {t.home}
           </Link>
           <Link to="/templates" className="hover:text-[#D4AF37]">
-            Templates
+            {t.templates}
           </Link>
           <Link to="/how-it-works" className="hover:text-[#D4AF37]">
-            How it Works
+            {t.whyChooseUs}
           </Link>
           <Link to="/pricing" className="hover:text-[#D4AF37]">
-            Pricing
+            {t.pricing}
           </Link>
           <Link to="/about-us" className="hover:text-[#D4AF37]">
-            About Us
+            {t.aboutUs}
           </Link>
           <Link to="/contact-us" className="hover:text-[#D4AF37]">
-            Contact
+            {t.contactUs}
           </Link>
 
           {isLoggedIn ? (
@@ -180,7 +200,7 @@ const Navbar = () => {
               to="/login"
               className="bg-[#6E1E1E] text-white px-6 py-3 rounded-lg hover:bg-[#D4AF37] hover:text-[#6E1E1E] transition font-semibold w-full text-center"
             >
-              Login / Register
+              {t.login}
             </Link>
           )}
         </div>

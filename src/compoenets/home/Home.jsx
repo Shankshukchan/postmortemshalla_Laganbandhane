@@ -1,55 +1,15 @@
 import React, { useState, useEffect, useRef, useContext } from "react";
 import { UserContext } from "../../UserContext";
+import { LanguageContext } from "../../LanguageContext";
 import CountUp from "react-countup";
 import HeroSection from "./HeroSection";
 import HowItWorks from "./HowItWorks";
 import AboutSection from "./AboutSection";
 import ContactSection from "./ContactSection";
 
-// Testimonials data
-const testimonials = [
-  {
-    name: "Amit & Neha",
-    text: "Laganbandhane made our wedding planning so easy! The invitations were beautiful and the support team was amazing.",
-    img: "/images/profile.jpg",
-  },
-  {
-    name: "Priya & Rahul",
-    text: "We loved the customization options and how quickly we could share our invites with family.",
-    img: "/images/photo-1633332755192-727a05c4013d.jpeg",
-  },
-  {
-    name: "Sonal & Arjun",
-    text: "The banners and templates are gorgeous. Highly recommended for any event!",
-    img: "/images/leaf.png",
-  },
-];
-
-const features = [
-  {
-    icon: "💡",
-    title: "Creative Templates",
-    desc: "Choose from a wide range of beautiful, customizable designs.",
-  },
-  {
-    icon: "⚡",
-    title: "Instant Download",
-    desc: "Get your invitations and banners instantly after customization.",
-  },
-  {
-    icon: "🔒",
-    title: "Secure Payment",
-    desc: "Safe and easy payment options for your peace of mind.",
-  },
-  {
-    icon: "🤝",
-    title: "Expert Support",
-    desc: "Our team is always ready to help you at every step.",
-  },
-];
-
 const Home = () => {
   const { updateUserImage } = useContext(UserContext);
+  const { t } = useContext(LanguageContext);
   // Utility to normalize image paths
   const normalizeImagePath = (src) => {
     if (!src) return null;
@@ -157,6 +117,46 @@ const Home = () => {
   const happyRef = useRef();
   // Testimonial carousel
   const [testimonialIdx, setTestimonialIdx] = useState(0);
+  const testimonialsList = t.testimonials || [
+    {
+      name: "Amit & Neha",
+      text: "Laganbandhane made our wedding planning so easy! The invitations were beautiful and the support team was amazing.",
+      img: "/images/profile.jpg",
+    },
+    {
+      name: "Priya & Rahul",
+      text: "We loved the customization options and how quickly we could share our invites with family.",
+      img: "/images/photo-1633332755192-727a05c4013d.jpeg",
+    },
+    {
+      name: "Sonal & Arjun",
+      text: "The banners and templates are gorgeous. Highly recommended for any event!",
+      img: "/images/leaf.png",
+    },
+  ];
+
+  const featuresList = t.features || [
+    {
+      icon: "💡",
+      title: "Creative Templates",
+      desc: "Choose from a wide range of beautiful, customizable designs.",
+    },
+    {
+      icon: "⚡",
+      title: "Instant Download",
+      desc: "Get your invitations and banners instantly after customization.",
+    },
+    {
+      icon: "🔒",
+      title: "Secure Payment",
+      desc: "Safe and easy payment options for your peace of mind.",
+    },
+    {
+      icon: "🤝",
+      title: "Expert Support",
+      desc: "Our team is always ready to help you at every step.",
+    },
+  ];
 
   // Section reveal on scroll
   useEffect(() => {
@@ -193,7 +193,7 @@ const Home = () => {
   // Testimonial carousel auto-advance
   useEffect(() => {
     const timer = setInterval(() => {
-      setTestimonialIdx((idx) => (idx + 1) % testimonials.length);
+      setTestimonialIdx((idx) => (idx + 1) % testimonialsList.length);
     }, 4000);
     return () => clearInterval(timer);
   }, []);
@@ -223,10 +223,10 @@ const Home = () => {
           data-home-section
         >
           <h2 className="text-3xl md:text-4xl font-bold text-center text-[#D4AF37] mb-10">
-            Why Choose Us?
+            {t.whyChooseUs}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            {features.map((f, i) => (
+            {featuresList.map((f, i) => (
               <div
                 key={i}
                 className="bg-white/90 rounded-2xl shadow-xl p-8 flex flex-col items-center text-center hover:scale-105 transition-transform duration-300"
@@ -273,7 +273,7 @@ const Home = () => {
               +
             </span>
             <div className="text-xl md:text-2xl text-[#6E1E1E] mt-2 font-semibold">
-              Happy Couples Served
+              {t.happyCouplesServed}
             </div>
           </div>
         </section>
@@ -288,20 +288,20 @@ const Home = () => {
           data-home-section
         >
           <h2 className="text-3xl md:text-4xl font-bold text-center text-[#6E1E1E] mb-10">
-            What Our Users Say
+            {t.testimonialsTitle}
           </h2>
           <div className="flex flex-col md:flex-row items-center justify-center gap-8">
             <div className="bg-white/90 rounded-2xl shadow-xl p-8 flex flex-col items-center text-center w-full md:w-2/3 mx-auto">
               <img
-                src={testimonials[testimonialIdx].img}
-                alt={testimonials[testimonialIdx].name}
+                src={testimonialsList[testimonialIdx]?.img}
+                alt={testimonialsList[testimonialIdx]?.name}
                 className="w-16 h-16 rounded-full object-cover border-2 border-[#D4AF37] mb-4"
               />
               <p className="text-[#6E1E1E] text-lg italic mb-2">
-                "{testimonials[testimonialIdx].text}"
+                "{testimonialsList[testimonialIdx]?.text}"
               </p>
               <p className="text-[#D4AF37] font-bold">
-                {testimonials[testimonialIdx].name}
+                {testimonialsList[testimonialIdx]?.name}
               </p>
             </div>
           </div>

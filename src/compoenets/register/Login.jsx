@@ -6,25 +6,22 @@ import axios from "axios";
 import swal from "sweetalert";
 import React, { useContext } from "react";
 import { UserContext } from "../../UserContext";
+import { LanguageContext } from "../../LanguageContext";
 const loginApiUrl = import.meta.env.VITE_USER_LOGIN;
 
-const schema = yup.object().shape({
-  FullName: yup
-    .string()
-    .required("Full Name is required")
-    .min(2, "Full Name must be at least 2 characters"),
-  email: yup
-    .string()
-    .email("Enter a valid email")
-    .required("Email is required"),
-  password: yup
-    .string()
-    .min(6, "Password must be at least 6 characters")
-    .required("Password is required"),
-});
+// validation schema will be created inside the component to use translations (t)
 
 const Login = () => {
   const { updateUserImage, setLoginState } = useContext(UserContext);
+  const { t } = useContext(LanguageContext);
+
+  // build schema with translated messages
+  const schema = yup.object().shape({
+    FullName: yup.string().required(t.requiredFullName).min(2, t.minFullName),
+    email: yup.string().email(t.enterValidEmail).required(t.requiredEmail),
+    password: yup.string().min(6, t.minPassword).required(t.requiredPassword),
+  });
+
   const {
     register,
     handleSubmit,
@@ -70,8 +67,8 @@ const Login = () => {
         // Set login state in context
         setLoginState(true);
         swal({
-          title: "Success",
-          text: "Login successful!",
+          title: t.loginSuccessTitle,
+          text: t.loginSuccessText,
           icon: "success",
           timer: 2000,
           buttons: false,
@@ -85,7 +82,7 @@ const Login = () => {
         // Navigate to user dashboard so the profile is fetched and displayed
         navigate("/");
       } else {
-        await swal("Error", "Login failed. Please try again.", "error");
+        await swal(t.loginErrorTitle, t.loginErrorTryAgain, "error");
       }
     } catch (error) {
       if (
@@ -93,16 +90,16 @@ const Login = () => {
         error.response.data &&
         error.response.data.message === "Invalid email or password"
       ) {
-        await swal("Login Failed", "Invalid email or password!", "warning");
+        await swal(t.loginFailedTitle, t.loginInvalidCredentials, "warning");
       } else if (
         error.response &&
         error.response.data &&
         error.response.data.message === "User not found, please register"
       ) {
-        await swal("Not Found", "User not found, please register!", "info");
+        await swal(t.loginNotFoundTitle, t.loginNotFoundText, "info");
         navigate("/signup");
       } else {
-        await swal("Error", "Login failed. Please try again.", "error");
+        await swal(t.loginErrorTitle, t.loginErrorTryAgain, "error");
       }
     }
   }
@@ -125,10 +122,12 @@ const Login = () => {
                 alt=""
                 className="h-[70px] w-[70px] mb-4 lg:hidden mx-auto"
               />
-              <h1 className="text-[#6E1E1E] text-3xl font-bold mb-6 ">Login</h1>
+              <h1 className="text-[#6E1E1E] text-3xl font-bold mb-6 ">
+                {t.loginTitle}
+              </h1>
               <input
                 className="w-full p-2 mb-1 text[#6E1E1E] border-1 rounded-md border-[#6E1E1E] outline-none focus:bg-gray-300"
-                placeholder="Full Name"
+                placeholder={t.name}
                 type="text"
                 name="FullName"
                 {...register("FullName")}
@@ -144,7 +143,7 @@ const Login = () => {
                 className="w-full p-2 mb-1 text[#6E1E1E] border-1 rounded-md border-[#6E1E1E] outline-none focus:bg-gray-300"
                 type="email"
                 name="email"
-                placeholder="Email"
+                placeholder={t.email}
                 {...register("email")}
               />
               {errors.email && (
@@ -158,7 +157,7 @@ const Login = () => {
                 className="w-full p-2 mb-1 text[#6E1E1E] border-1 rounded-md border-[#6E1E1E] outline-none focus:bg-gray-300"
                 type="password"
                 name="password"
-                placeholder="Password"
+                placeholder={t.password || "Password"}
                 {...register("password")}
               />
               {errors.password && (
@@ -168,24 +167,24 @@ const Login = () => {
               )}
             </div>
             <p className="text-[12px] text-right font-bold text-[#6E1E1E] hover:text-[#D4AF37] hover:text-shadow-[_1px_1px_rgb(110_30_30_/_1)] hover:text-shadow-[_-1px_-1px_rgb(110_30_30_/_1)]">
-              <a href="">Forgot Password?</a>
+              <a href="">{t.forgotPassword}</a>
             </p>
             <div>
               <input
                 className="w-full bg-[#6E1E1E] hover:bg-[#D4AF37] border-1 border-[#6E1E1E] text-white  hover:text-[#6E1E1E] font-bold py-2 px-4 mb-6 rounded hover:cursor-pointer"
                 type="submit"
                 name="submit"
-                value={"Login"}
-                defaultValue="Login"
+                value={t.loginTitle}
+                defaultValue={t.loginTitle}
               />
             </div>
             <p className="text-[12px] text-right font-bold text-[#6E1E1E] flex gap-2">
-              <p>New to Laganbandhane? </p>
+              <span>{t.newTo} </span>
               <Link
                 to="/signup"
                 className=" hover:text-[#D4AF37] hover:text-shadow-[_1px_1px_rgb(110_30_30_/_1)] hover:text-shadow-[_-1px_-1px_rgb(110_30_30_/_1)]"
               >
-                Sign Up
+                {t.signUp}
               </Link>
             </p>
           </form>
