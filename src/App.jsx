@@ -16,6 +16,7 @@ import ContactUs from "./compoenets/contact/ContactUs";
 import AboutUs from "./compoenets/about-us/AboutUs";
 import UserDashboard from "./compoenets/dashboards/user-dashboard/UserDashboard";
 import AdminDashboard from "./compoenets/dashboards/admin-dashboard/AdminDashboard";
+import ProtectedAdminRoute from "./compoenets/dashboards/admin-dashboard/ProtectedAdminRoute";
 
 // ProtectedRoute for editor: only redirect to login if not logged in
 function ProtectedRoute({ children }) {
@@ -43,7 +44,14 @@ function App() {
             <Route path="/about-us" element={<AboutUs />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/user-dashboard" element={<UserDashboard />} />
-            <Route path="/admin-dashboard" element={<AdminDashboard />} />
+            <Route
+              path="/admin-dashboard"
+              element={
+                <ProtectedAdminRoute>
+                  <AdminDashboard />
+                </ProtectedAdminRoute>
+              }
+            />
           </Routes>
           <Footer />
           <MoveToTopButton />

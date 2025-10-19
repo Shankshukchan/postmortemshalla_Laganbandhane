@@ -18,7 +18,14 @@ const Login = () => {
   // build schema with translated messages
   const schema = yup.object().shape({
     FullName: yup.string().required(t.requiredFullName).min(2, t.minFullName),
-    email: yup.string().email(t.enterValidEmail).required(t.requiredEmail),
+    email: yup
+      .string()
+      .email(t.enterValidEmail)
+      .when("isAdminLogin", {
+        is: true,
+        then: (schema) => schema.notRequired(),
+        otherwise: (schema) => schema.required(t.requiredEmail),
+      }),
     password: yup.string().min(6, t.minPassword).required(t.requiredPassword),
   });
 
@@ -26,6 +33,7 @@ const Login = () => {
     register,
     handleSubmit,
     formState: { errors },
+    watch,
   } = useForm({
     resolver: yupResolver(schema),
   });
@@ -33,7 +41,43 @@ const Login = () => {
   const navigate = useNavigate();
 
   async function handleData(data) {
+    // New: support admin login toggle via form field 'isAdminLogin'
     try {
+      const isAdminLogin = data && data.isAdminLogin;
+      if (isAdminLogin) {
+        // Admin login endpoint
+        const apiBase =
+          (import.meta.env && import.meta.env.VITE_API_URL) ||
+          "http://localhost:8000";
+        const username =
+          data.adminUsername || data.FullName || data.email || "LB@gmail.com";
+        const res = await axios.post(`${apiBase}/api/admin/login`, {
+          username,
+          password: data.password,
+        });
+        if (res.data && res.data.success && res.data.token) {
+          localStorage.setItem("token", res.data.token);
+          // mark admin mode so Navbar can hide
+          localStorage.setItem("isAdmin", "1");
+          // clear user context/state
+          try {
+            localStorage.removeItem("user");
+          } catch (e) {}
+          setLoginState(false);
+          swal({
+            title: "Admin signed in",
+            icon: "success",
+            timer: 1200,
+            buttons: false,
+          });
+          navigate("/admin-dashboard");
+          return;
+        }
+        await swal(t.loginErrorTitle, t.loginErrorTryAgain, "error");
+        return;
+      }
+
+      // Regular user login flow (existing behavior)
       const res = await axios.post(loginApiUrl, data);
       if (res.data && res.data.success) {
         // Store user data and token in localStorage (ensure correct keys)
@@ -85,17 +129,11 @@ const Login = () => {
         await swal(t.loginErrorTitle, t.loginErrorTryAgain, "error");
       }
     } catch (error) {
-      if (
-        error.response &&
-        error.response.data &&
-        error.response.data.message === "Invalid email or password"
-      ) {
+      // Handle common axios errors
+      const errMsg = error?.response?.data?.message;
+      if (errMsg === "Invalid email or password") {
         await swal(t.loginFailedTitle, t.loginInvalidCredentials, "warning");
-      } else if (
-        error.response &&
-        error.response.data &&
-        error.response.data.message === "User not found, please register"
-      ) {
+      } else if (errMsg === "User not found, please register") {
         await swal(t.loginNotFoundTitle, t.loginNotFoundText, "info");
         navigate("/signup");
       } else {
@@ -138,20 +176,44 @@ const Login = () => {
                 </p>
               )}
             </div>
-            <div>
+            <div className="flex items-center gap-2 mb-4">
               <input
-                className="w-full p-2 mb-1 text[#6E1E1E] border-1 rounded-md border-[#6E1E1E] outline-none focus:bg-gray-300"
-                type="email"
-                name="email"
-                placeholder={t.email}
-                {...register("email")}
+                type="checkbox"
+                id="isAdminLogin"
+                {...register("isAdminLogin")}
               />
-              {errors.email && (
-                <p className="text-red-500 text-xs mb-4">
-                  {errors.email.message}
-                </p>
-              )}
+              <label htmlFor="isAdminLogin" className="text-sm">
+                Admin login
+              </label>
             </div>
+            {/* Show adminUsername only when admin login is checked; hide email then */}
+            {watch("isAdminLogin") ? (
+              <div className="mb-4">
+                <input
+                  className="w-full p-2 mb-1 text[#6E1E1E] border-1 rounded-md border-[#6E1E1E] outline-none focus:bg-gray-300"
+                  placeholder="Admin username (optional)"
+                  type="text"
+                  name="adminUsername"
+                  {...register("adminUsername")}
+                />
+              </div>
+            ) : null}
+            {!watch("isAdminLogin") && (
+              <div>
+                <input
+                  className="w-full p-2 mb-1 text[#6E1E1E] border-1 rounded-md border-[#6E1E1E] outline-none focus:bg-gray-300"
+                  type="email"
+                  name="email"
+                  placeholder={t.email}
+                  {...register("email")}
+                />
+                {errors.email && (
+                  <p className="text-red-500 text-xs mb-4">
+                    {errors.email.message}
+                  </p>
+                )}
+              </div>
+            )}
             <div>
               <input
                 className="w-full p-2 mb-1 text[#6E1E1E] border-1 rounded-md border-[#6E1E1E] outline-none focus:bg-gray-300"

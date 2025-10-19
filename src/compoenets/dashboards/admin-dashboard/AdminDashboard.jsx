@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 const NAV_ITEMS = [
   { key: "analytics", label: "Analytics" },
@@ -9,6 +10,19 @@ const NAV_ITEMS = [
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("analytics");
+  const navigate = useNavigate();
+
+  const handleAdminLogout = () => {
+    try {
+      localStorage.removeItem("token");
+      localStorage.removeItem("isAdmin");
+      localStorage.removeItem("user");
+    } catch (e) {
+      // ignore
+    }
+    // Redirect to login page after logout
+    navigate("/login");
+  };
 
   return (
     <div className="flex min-h-screen bg-gray-100">
@@ -34,9 +48,17 @@ const AdminDashboard = () => {
 
       {/* Main Content */}
       <main className="flex-1 p-8">
-        <h1 className="text-3xl font-bold mb-6 text-gray-800">
-          Admin Dashboard
-        </h1>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-3xl font-bold text-gray-800">Admin Dashboard</h1>
+          <div>
+            <button
+              onClick={handleAdminLogout}
+              className="bg-red-600 text-white px-3 py-2 rounded hover:bg-red-700"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
         <section className="bg-white rounded-lg shadow p-6 min-h-[400px]">
           {activeTab === "analytics" && <AnalyticsSection />}
           {activeTab === "templates" && <TemplatesSection />}
@@ -70,47 +92,272 @@ const AnalyticsSection = () => (
   </div>
 );
 
-const TemplatesSection = () => (
-  <div>
-    <h2 className="text-xl font-semibold mb-4">Manage Templates</h2>
-    <div className="mb-4 flex gap-2">
-      <button className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
-        Add Template
-      </button>
-      <button className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-        Create Category
-      </button>
-    </div>
-    <div className="overflow-x-auto">
-      <table className="min-w-full bg-white border rounded">
-        <thead>
-          <tr>
-            <th className="px-4 py-2 border">Name</th>
-            <th className="px-4 py-2 border">Category</th>
-            <th className="px-4 py-2 border">Type</th>
-            <th className="px-4 py-2 border">Photo</th>
-            <th className="px-4 py-2 border">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {/* Example row */}
-          <tr>
-            <td className="px-4 py-2 border">Template 1</td>
-            <td className="px-4 py-2 border">With Photo</td>
-            <td className="px-4 py-2 border">Custom</td>
-            <td className="px-4 py-2 border">[img]</td>
-            <td className="px-4 py-2 border flex gap-2">
-              <button className="bg-yellow-400 px-2 py-1 rounded">Edit</button>
-              <button className="bg-red-500 text-white px-2 py-1 rounded">
+const TemplatesSection = () => {
+  const [files, setFiles] = React.useState([]);
+  const [fileInput, setFileInput] = React.useState(null);
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState(null);
+
+  const apiBase =
+    (import.meta.env && import.meta.env.VITE_API_URL) ||
+    "http://localhost:8000";
+
+  const fetchFiles = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${apiBase}/api/media`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.message || "Failed to list media");
+      setFiles(json.data || []);
+    } catch (err) {
+      console.error("fetchFiles", err);
+      setError(err.message || "Error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchFiles();
+  }, []);
+
+  // --- Template records management ---
+  const [templates, setTemplates] = React.useState([]);
+  const [tplName, setTplName] = React.useState("");
+  const [tplCategory, setTplCategory] = React.useState("general");
+  const [tplType, setTplType] = React.useState("image");
+
+  const fetchTemplates = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${apiBase}/api/templates`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.message || "Failed to load templates");
+      setTemplates(json.data || []);
+    } catch (err) {
+      console.error("fetchTemplates", err);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchTemplates();
+  }, []);
+
+  const handleCreateTemplate = async (e) => {
+    e.preventDefault();
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${apiBase}/api/templates`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          name: tplName,
+          category: tplCategory,
+          type: tplType,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.message || "Create template failed");
+      setTplName("");
+      fetchTemplates();
+    } catch (err) {
+      console.error("create template", err);
+      setError(err.message || "Template create error");
+    }
+  };
+
+  const handleDeleteTemplate = async (id) => {
+    if (!confirm("Delete template?")) return;
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${apiBase}/api/templates/${id}`, {
+        method: "DELETE",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.message || "Delete failed");
+      fetchTemplates();
+    } catch (err) {
+      console.error("delete template", err);
+      setError(err.message || "Template delete error");
+    }
+  };
+
+  const handleUpload = async (e) => {
+    e.preventDefault();
+    if (!fileInput) return;
+    const form = new FormData();
+    form.append("file", fileInput);
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${apiBase}/api/media`, {
+        method: "POST",
+        body: form,
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.message || "Upload failed");
+      // refresh list
+      fetchFiles();
+      // Notify editor via localStorage event (simple cross-tab update)
+      localStorage.setItem("media_updated_at", Date.now().toString());
+      setFileInput(null);
+      e.target.reset();
+    } catch (err) {
+      console.error("upload", err);
+      setError(err.message || "Upload error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (filename) => {
+    if (!confirm(`Delete ${filename}?`)) return;
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `${apiBase}/api/media/${encodeURIComponent(filename)}`,
+        {
+          method: "DELETE",
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }
+      );
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.message || "Delete failed");
+      fetchFiles();
+      localStorage.setItem("media_updated_at", Date.now().toString());
+    } catch (err) {
+      console.error("delete", err);
+      setError(err.message || "Delete error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div>
+      <h2 className="text-xl font-semibold mb-4">Manage Templates & Media</h2>
+      <div className="mb-4">
+        <form onSubmit={handleUpload} className="flex gap-2 items-center">
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => setFileInput(e.target.files[0])}
+          />
+          <button
+            className="bg-green-600 text-white px-4 py-2 rounded"
+            type="submit"
+          >
+            Upload
+          </button>
+        </form>
+        {loading && (
+          <div className="text-sm text-gray-600 mt-2">Working...</div>
+        )}
+        {error && <div className="text-sm text-red-600 mt-2">{error}</div>}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {files.map((f) => (
+          <div key={f.filename} className="bg-white p-3 rounded shadow">
+            <img
+              src={f.url}
+              alt={f.filename}
+              className="w-full h-36 object-cover rounded mb-2"
+            />
+            <div className="text-sm text-gray-700">{f.filename}</div>
+            <div className="flex gap-2 mt-2">
+              <button
+                onClick={() => navigator.clipboard.writeText(f.url)}
+                className="px-2 py-1 bg-blue-100 rounded"
+              >
+                Copy URL
+              </button>
+              <button
+                onClick={() => handleDelete(f.filename)}
+                className="px-2 py-1 bg-red-100 text-red-700 rounded"
+              >
                 Delete
               </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-8">
+        <h3 className="text-lg font-semibold mb-2">Template Records</h3>
+        <form
+          onSubmit={handleCreateTemplate}
+          className="flex gap-2 items-center mb-4"
+        >
+          <input
+            value={tplName}
+            onChange={(e) => setTplName(e.target.value)}
+            placeholder="Template name"
+            className="border p-2 rounded"
+          />
+          <select
+            value={tplCategory}
+            onChange={(e) => setTplCategory(e.target.value)}
+            className="border p-2 rounded"
+          >
+            <option value="general">General</option>
+            <option value="border">Border</option>
+            <option value="layout">Layout</option>
+          </select>
+          <select
+            value={tplType}
+            onChange={(e) => setTplType(e.target.value)}
+            className="border p-2 rounded"
+          >
+            <option value="image">Image</option>
+            <option value="layout">Layout</option>
+          </select>
+          <button
+            className="bg-green-600 text-white px-4 py-2 rounded"
+            type="submit"
+          >
+            Create
+          </button>
+        </form>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {templates.map((t) => (
+            <div
+              key={t._id}
+              className="bg-white p-3 rounded shadow flex items-center justify-between"
+            >
+              <div>
+                <div className="font-semibold">{t.name}</div>
+                <div className="text-sm text-gray-500">
+                  {t.category} • {t.type}
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleDeleteTemplate(t._id)}
+                  className="px-3 py-1 bg-red-100 text-red-700 rounded"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const UsersSection = () => {
   const [users, setUsers] = useState([]);

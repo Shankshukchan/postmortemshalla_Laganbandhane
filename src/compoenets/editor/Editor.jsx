@@ -10,22 +10,24 @@ const Editor = () => {
   // A4 size at 96dpi: 794 x 1123 px (portrait)
   const A4_WIDTH = 794;
   const A4_HEIGHT = 1123;
-  // Admin-uploaded images (from public/images)
-  const adminPhotos = [
+  // Admin-uploaded images/borders will be fetched from backend when available
+  const [fetchedPhotos, setFetchedPhotos] = useState([]);
+  const [fetchedBorders, setFetchedBorders] = useState([]);
+  // Default built-in assets as fallback
+  const builtinPhotos = [
     "/images/banner.png",
     "/images/leaf.png",
     "/images/service.png",
     "/images/temp.png",
     "/images/banner(1)(1).png",
   ];
-  // Admin-uploaded borders (add more as needed)
-  const adminBorders = [
+  const builtinBorders = [
     "/images/images.png",
     "/images/images.jpeg",
     "/images/u1.png",
     "/images/u2.png",
   ];
-  const [photo, setPhoto] = useState(adminPhotos[0]);
+  const [photo, setPhoto] = useState(builtinPhotos[0]);
   const [border, setBorder] = useState("");
   const [layout, setLayout] = useState("layout1");
   const [font, setFont] = useState("serif");
@@ -40,6 +42,10 @@ const Editor = () => {
     { id: 7, label: "Marriage Status", value: "" },
   ]);
   const canvasRef = useRef(null);
+
+  // Read translations from LanguageContext (safe fallback)
+  const langCtx = useContext(LanguageContext) || {};
+  const t = langCtx.t || {};
 
   // Layout options
   const layouts = [
@@ -164,6 +170,66 @@ const Editor = () => {
     }
     // eslint-disable-next-line
   }, [photo, layout, font, fields, border]);
+
+  // Fetch media (uploads) from backend and update lists
+  React.useEffect(() => {
+    const apiBase =
+      (import.meta.env && import.meta.env.VITE_API_URL) ||
+      "http://localhost:8000";
+
+    const fetchMedia = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${apiBase}/api/media`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (!res.ok) {
+          // don't break the editor if media list is unavailable
+          return;
+        }
+        const json = await res.json();
+        const files = json.data || [];
+        // Simple heuristic: photos vs borders by filename or folder
+        const photos = files
+          .map((f) => f.url)
+          .filter((u) => /banner|service|temp|profile|u[12]/i.test(u));
+        const borders = files
+          .map((f) => f.url)
+          .filter((u) => /border|images|frame/i.test(u));
+        if (photos.length) setFetchedPhotos(photos);
+        if (borders.length) setFetchedBorders(borders);
+      } catch (err) {
+        // ignore errors
+      }
+    };
+
+    fetchMedia();
+
+    // Listen for cross-tab/local updates
+    const onStorage = (e) => {
+      if (e.key === "media_updated_at") {
+        fetchMedia();
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
+  // If fetched photos become available and the user hasn't changed photo from the initial builtin,
+  // prefer the first fetched photo so editor shows uploaded content.
+  React.useEffect(() => {
+    if (fetchedPhotos && fetchedPhotos.length > 0) {
+      // if current photo is one of the builtinPhotos (not a previously selected uploaded one)
+      if (builtinPhotos.includes(photo)) {
+        setPhoto(fetchedPhotos[0]);
+      }
+    }
+  }, [fetchedPhotos]);
+
+  const availableBorders =
+    fetchedBorders && fetchedBorders.length ? fetchedBorders : builtinBorders;
+  const availablePhotos =
+    fetchedPhotos && fetchedPhotos.length ? fetchedPhotos : builtinPhotos;
 
   function drawFields(
     ctx,
@@ -293,7 +359,7 @@ const Editor = () => {
                 }}
               >
                 <option value="">No Border</option>
-                {adminBorders.map((img, idx) => (
+                {availableBorders.map((img, idx) => (
                   <option key={img} value={img}>
                     Border {idx + 1}
                   </option>
@@ -332,7 +398,7 @@ const Editor = () => {
                   border: "1px solid #e2e8f0",
                 }}
               >
-                {adminPhotos.map((img, idx) => (
+                {availablePhotos.map((img, idx) => (
                   <option key={img} value={img}>
                     Photo {idx + 1}
                   </option>

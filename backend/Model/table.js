@@ -4,6 +4,8 @@ const userTableSchema = new mongoose.Schema({
   FullName: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true, default: "Test@12345" },
+  role: { type: String, default: "user" },
+  isAdmin: { type: Boolean, default: false },
   profileImage: { type: String, default: "" },
   birthdate: { type: String, default: "" },
   caste: { type: String, default: "" },

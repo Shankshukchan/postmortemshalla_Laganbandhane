@@ -4,6 +4,16 @@ import { UserContext } from "../../UserContext";
 import { LanguageContext } from "../../LanguageContext";
 
 const Navbar = () => {
+  // If admin is signed in, hide the normal navbar UI.
+  try {
+    const adminFlag =
+      typeof window !== "undefined" &&
+      window.localStorage &&
+      localStorage.getItem("isAdmin");
+    if (adminFlag === "1") return null;
+  } catch (e) {
+    // ignore
+  }
   // Utility to normalize image paths
   const normalizeImagePath = (src) => {
     if (!src) return "/images/profile.jpg";
