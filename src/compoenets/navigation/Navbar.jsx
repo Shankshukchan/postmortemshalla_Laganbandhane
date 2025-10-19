@@ -6,11 +6,13 @@ import { LanguageContext } from "../../LanguageContext";
 const Navbar = () => {
   // If admin is signed in, hide the normal navbar UI.
   try {
+    // Only hide navbar when there's an admin flag AND a token present.
     const adminFlag =
       typeof window !== "undefined" &&
       window.localStorage &&
-      localStorage.getItem("isAdmin");
-    if (adminFlag === "1") return null;
+      localStorage.getItem("isAdmin") === "1" &&
+      !!localStorage.getItem("token");
+    if (adminFlag) return null;
   } catch (e) {
     // ignore
   }
