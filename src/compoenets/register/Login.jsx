@@ -8,6 +8,7 @@ import React, { useContext } from "react";
 import { UserContext } from "../../UserContext";
 import { LanguageContext } from "../../LanguageContext";
 const loginApiUrl = import.meta.env.VITE_USER_LOGIN;
+const profileFetchUrl = import.meta.env.VITE_PROFILE_FETCH_URL;
 
 // validation schema will be created inside the component to use translations (t)
 
@@ -100,13 +101,19 @@ const Login = () => {
             localStorage.setItem("userId", userId);
           } catch (e) {}
         }
-        // Save profile image path if returned by backend
+        // Save profile image path if returned by backend. If backend does not
+        // return an image, prefer any previously stored `localStorage.userImage`
+        // so the UI (Navbar/UserDashboard) can show the picture immediately.
         const profileImagePath = userData.profileImage || userData.image || "";
         try {
-          if (profileImagePath)
-            localStorage.setItem("userImage", profileImagePath);
-          // Update context image
-          updateUserImage(profileImagePath);
+          if (profileImagePath) {
+            // Delegate normalization + persistence to UserContext
+            updateUserImage(profileImagePath);
+          } else {
+            // fallback to whatever was already stored locally (if any)
+            const stored = localStorage.getItem("userImage");
+            if (stored) updateUserImage(stored);
+          }
         } catch (e) {}
         // Set login state in context
         setLoginState(true);
@@ -117,13 +124,40 @@ const Login = () => {
           timer: 2000,
           buttons: false,
         });
-        // Set a flag so Home can reload itself after navigation
+        // Try to fetch latest profile immediately so UI updates without reload
+        try {
+          const token = localStorage.getItem("token");
+          if (userId && profileFetchUrl) {
+            try {
+              const profileRes = await axios.get(
+                `${profileFetchUrl}?userId=${userId}`,
+                { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+              );
+              if (
+                profileRes &&
+                profileRes.data &&
+                profileRes.data.success &&
+                profileRes.data.data
+              ) {
+                const profileImg =
+                  profileRes.data.data.profileImage ||
+                  profileRes.data.data.image ||
+                  "";
+                if (profileImg) updateUserImage(profileImg);
+              }
+            } catch (e) {
+              // ignore profile fetch error — Home will fetch on mount or reload
+            }
+          }
+        } catch (e) {}
+
+        // Set a flag so Home can reload itself after navigation if needed
         try {
           localStorage.setItem("reloadAfterLogin", "1");
         } catch (e) {
           // ignore storage errors (e.g., private mode)
         }
-        // Navigate to user dashboard so the profile is fetched and displayed
+        // Navigate to home so profile UI is visible
         navigate("/");
       } else {
         await swal(t.loginErrorTitle, t.loginErrorTryAgain, "error");
@@ -187,17 +221,7 @@ const Login = () => {
               </label>
             </div>
             {/* Show adminUsername only when admin login is checked; hide email then */}
-            {watch("isAdminLogin") ? (
-              <div className="mb-4">
-                <input
-                  className="w-full p-2 mb-1 text[#6E1E1E] border-1 rounded-md border-[#6E1E1E] outline-none focus:bg-gray-300"
-                  placeholder="Admin username (optional)"
-                  type="text"
-                  name="adminUsername"
-                  {...register("adminUsername")}
-                />
-              </div>
-            ) : null}
+
             {!watch("isAdminLogin") && (
               <div>
                 <input

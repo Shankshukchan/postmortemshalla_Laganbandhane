@@ -29,7 +29,7 @@ const Home = () => {
       }
       const parts = normalized.split("/");
       const basename = parts[parts.length - 1] || normalized;
-      return encodeURI(`/uploads/${basename}`);
+      return encodeURI(`/uploads/profile/${basename}`);
     } catch (e) {
       return src;
     }

@@ -31,9 +31,12 @@ const updateUserProfileController = async (req, res) => {
     if (religion) updateData.religion = religion;
     if (age) updateData.age = age;
     if (marriageStatus) updateData.marriageStatus = marriageStatus;
-    // Store only the filename in DB (do not store absolute filesystem paths)
+    // If a file was uploaded, store a relative path pointing to the
+    // profile directory. Multer is configured to save profile images
+    // under uploads/profile when the fieldname is `profileImage`.
     if (req.file) {
-      updateData.profileImage = req.file.filename;
+      // store POSIX style path so path separators are consistent across OS
+      updateData.profileImage = path.posix.join("profile", req.file.filename);
     }
     // Build query: prefer authenticated user id, then explicit userId, then email
     const query = authUserId
@@ -96,12 +99,10 @@ const serveProfileImageController = async (req, res) => {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
     if (String(req.user.id) !== String(requestedUserId)) {
-      return res
-        .status(403)
-        .json({
-          success: false,
-          message: "Forbidden: cannot access other user's image",
-        });
+      return res.status(403).json({
+        success: false,
+        message: "Forbidden: cannot access other user's image",
+      });
     }
 
     const user = await userTable.findOne({ _id: requestedUserId }).lean();

@@ -47,7 +47,13 @@ const TemplateManager = () => {
   const handleAddTemplate = () => {
     setShowForm(true);
     setEditId(null);
-    setForm({ name: "", category: categories[0], type: "Custom", photo: null, content: "" });
+    setForm({
+      name: "",
+      category: categories[0],
+      type: "Custom",
+      photo: null,
+      content: "",
+    });
   };
 
   const handleEditTemplate = (id) => {
@@ -63,14 +69,29 @@ const TemplateManager = () => {
     }
   };
 
-  const handleFormSubmit = (e) => {
+  const fileToDataUrl = (file) =>
+    new Promise((resolve, reject) => {
+      if (!file) return resolve(null);
+      try {
+        const r = new FileReader();
+        r.onloadend = () => resolve(r.result);
+        r.onerror = reject;
+        r.readAsDataURL(file);
+      } catch (err) {
+        reject(err);
+      }
+    });
+
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
     if (!form.name.trim()) return alert("Template name required");
+    // convert any selected photo file to data URL so it's safe to store and display
+    const photoDataUrl = form.photo ? await fileToDataUrl(form.photo) : null;
     if (editId) {
       setTemplates((tpls) =>
         tpls.map((tpl) =>
           tpl.id === editId
-            ? { ...tpl, ...form, photo: form.photo ? URL.createObjectURL(form.photo) : tpl.photo }
+            ? { ...tpl, ...form, photo: photoDataUrl || tpl.photo }
             : tpl
         )
       );
@@ -79,13 +100,19 @@ const TemplateManager = () => {
         {
           ...form,
           id: Date.now(),
-          photo: form.photo ? URL.createObjectURL(form.photo) : null,
+          photo: photoDataUrl,
         },
         ...tpls,
       ]);
     }
     setShowForm(false);
-    setForm({ name: "", category: categories[0], type: "Custom", photo: null, content: "" });
+    setForm({
+      name: "",
+      category: categories[0],
+      type: "Custom",
+      photo: null,
+      content: "",
+    });
     setEditId(null);
   };
 
@@ -100,7 +127,10 @@ const TemplateManager = () => {
     <div className="p-6">
       <h2 className="text-xl font-bold mb-4">Template Management</h2>
       <div className="mb-4 flex gap-2">
-        <button className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700" onClick={handleAddTemplate}>
+        <button
+          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+          onClick={handleAddTemplate}
+        >
           Add Template
         </button>
         <input
@@ -110,7 +140,10 @@ const TemplateManager = () => {
           onChange={(e) => setNewCategory(e.target.value)}
           className="border px-2 py-1 rounded"
         />
-        <button className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600" onClick={handleAddCategory}>
+        <button
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+          onClick={handleAddCategory}
+        >
           Add Category
         </button>
       </div>
@@ -122,8 +155,11 @@ const TemplateManager = () => {
             className="bg-white p-6 rounded shadow-lg w-full max-w-md relative"
             onSubmit={handleFormSubmit}
           >
-            <h3 className="text-lg font-semibold mb-4">{editId ? "Edit" : "Add"} Template</h3>
-            <label className="block mb-2">Name
+            <h3 className="text-lg font-semibold mb-4">
+              {editId ? "Edit" : "Add"} Template
+            </h3>
+            <label className="block mb-2">
+              Name
               <input
                 type="text"
                 name="name"
@@ -133,7 +169,8 @@ const TemplateManager = () => {
                 required
               />
             </label>
-            <label className="block mb-2">Category
+            <label className="block mb-2">
+              Category
               <select
                 name="category"
                 value={form.category}
@@ -141,11 +178,14 @@ const TemplateManager = () => {
                 className="border px-2 py-1 rounded w-full"
               >
                 {categories.map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
                 ))}
               </select>
             </label>
-            <label className="block mb-2">Type
+            <label className="block mb-2">
+              Type
               <select
                 name="type"
                 value={form.type}
@@ -156,7 +196,8 @@ const TemplateManager = () => {
                 <option value="Text">Plain Text</option>
               </select>
             </label>
-            <label className="block mb-2">Photo (optional)
+            <label className="block mb-2">
+              Photo (optional)
               <input
                 type="file"
                 name="photo"
@@ -165,7 +206,8 @@ const TemplateManager = () => {
                 className="border px-2 py-1 rounded w-full"
               />
             </label>
-            <label className="block mb-2">Content
+            <label className="block mb-2">
+              Content
               <textarea
                 name="content"
                 value={form.content}
@@ -175,10 +217,17 @@ const TemplateManager = () => {
               />
             </label>
             <div className="flex gap-2 mt-4">
-              <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+              <button
+                type="submit"
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+              >
                 {editId ? "Update" : "Add"}
               </button>
-              <button type="button" className="bg-gray-400 text-white px-4 py-2 rounded" onClick={() => setShowForm(false)}>
+              <button
+                type="button"
+                className="bg-gray-400 text-white px-4 py-2 rounded"
+                onClick={() => setShowForm(false)}
+              >
                 Cancel
               </button>
             </div>
@@ -207,17 +256,29 @@ const TemplateManager = () => {
                 <td className="px-4 py-2 border">{tpl.type}</td>
                 <td className="px-4 py-2 border">
                   {tpl.photo ? (
-                    <img src={tpl.photo} alt="template" className="w-12 h-12 object-cover rounded" />
+                    <img
+                      src={tpl.photo}
+                      alt="template"
+                      className="w-12 h-12 object-cover rounded"
+                    />
                   ) : (
                     <span className="text-gray-400">No Photo</span>
                   )}
                 </td>
-                <td className="px-4 py-2 border max-w-xs truncate">{tpl.content}</td>
+                <td className="px-4 py-2 border max-w-xs truncate">
+                  {tpl.content}
+                </td>
                 <td className="px-4 py-2 border flex gap-2">
-                  <button className="bg-yellow-400 px-2 py-1 rounded" onClick={() => handleEditTemplate(tpl.id)}>
+                  <button
+                    className="bg-yellow-400 px-2 py-1 rounded"
+                    onClick={() => handleEditTemplate(tpl.id)}
+                  >
                     Edit
                   </button>
-                  <button className="bg-red-500 text-white px-2 py-1 rounded" onClick={() => handleDeleteTemplate(tpl.id)}>
+                  <button
+                    className="bg-red-500 text-white px-2 py-1 rounded"
+                    onClick={() => handleDeleteTemplate(tpl.id)}
+                  >
                     Delete
                   </button>
                 </td>

@@ -10,15 +10,18 @@ const uploadMedia = async (req, res) => {
       return res
         .status(400)
         .json({ success: false, message: "No file uploaded" });
-    return res
-      .status(201)
-      .json({
-        success: true,
-        data: {
-          filename: req.file.filename,
-          url: `/uploads/${req.file.filename}`,
-        },
-      });
+    const category =
+      (req.body && req.body.category) ||
+      (req.query && req.query.category) ||
+      "misc";
+    return res.status(201).json({
+      success: true,
+      data: {
+        filename: req.file.filename,
+        url: `/uploads/${category}/${req.file.filename}`,
+        category,
+      },
+    });
   } catch (err) {
     console.error("uploadMedia error", err);
     return res
@@ -27,14 +30,22 @@ const uploadMedia = async (req, res) => {
   }
 };
 
-// List all files in uploads directory
+// List files. If category query param is provided, list only that subfolder
 const listMedia = async (req, res) => {
   try {
-    const files = fs.readdirSync(uploadsDir).map((f) => {
-      const stat = fs.statSync(path.join(uploadsDir, f));
+    const category = (req.query && req.query.category) || null;
+    let targetDir = uploadsDir;
+    if (category) {
+      targetDir = path.join(uploadsDir, category);
+      if (!fs.existsSync(targetDir))
+        return res.status(200).json({ success: true, data: [] });
+    }
+    const files = fs.readdirSync(targetDir).map((f) => {
+      const stat = fs.statSync(path.join(targetDir, f));
+      const url = category ? `/uploads/${category}/${f}` : `/uploads/${f}`;
       return {
         filename: f,
-        url: `/uploads/${f}`,
+        url,
         size: stat.size,
         mtime: stat.mtime,
       };

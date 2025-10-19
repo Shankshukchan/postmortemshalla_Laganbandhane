@@ -13,6 +13,8 @@ const Editor = () => {
   // Admin-uploaded images/borders will be fetched from backend when available
   const [fetchedPhotos, setFetchedPhotos] = useState([]);
   const [fetchedBorders, setFetchedBorders] = useState([]);
+  const [uploadedFonts, setUploadedFonts] = useState([]);
+  const fontStyleRefs = useRef({});
   // Default built-in assets as fallback
   const builtinPhotos = [
     "/images/banner.png",
@@ -171,48 +173,94 @@ const Editor = () => {
     // eslint-disable-next-line
   }, [photo, layout, font, fields, border]);
 
-  // Fetch media (uploads) from backend and update lists
+  // Fetch categorized assets (adminPhoto, border, font) from backend and update lists
   React.useEffect(() => {
     const apiBase =
       (import.meta.env && import.meta.env.VITE_API_URL) ||
       "http://localhost:8000";
 
-    const fetchMedia = async () => {
+    const fullUrl = (u) => (u && u.startsWith("/") ? `${apiBase}${u}` : u);
+
+    const fetchAssets = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch(`${apiBase}/api/media`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+        const fetchCategory = async (category) => {
+          // Use the public assets endpoint so normal users (no admin token) can fetch borders/photos/fonts
+          const res = await fetch(
+            `${apiBase}/api/assets/public?category=${encodeURIComponent(
+              category
+            )}`,
+            { headers }
+          );
+          if (!res.ok) return [];
+          const json = await res.json();
+          return (json.data || []).map((a) => ({ ...a, url: fullUrl(a.url) }));
+        };
+
+        const [photosAssets, borderAssets, fontAssets] = await Promise.all([
+          fetchCategory("adminPhoto"),
+          fetchCategory("border"),
+          fetchCategory("font"),
+        ]);
+
+        if (photosAssets.length)
+          setFetchedPhotos(photosAssets.map((a) => a.url));
+        if (borderAssets.length)
+          setFetchedBorders(borderAssets.map((a) => a.url));
+
+        // Register fonts: create @font-face rules and store families
+        const fontsToUse = [];
+        fontAssets.forEach((a) => {
+          const family = `uploaded-font-${a._id}`;
+          const src = a.url;
+          if (!fontStyleRefs.current[a._id]) {
+            try {
+              const styleEl = document.createElement("style");
+              styleEl.setAttribute("data-uploaded-font", a._id);
+              let format = "";
+              if (src.endsWith(".woff2")) format = "format('woff2')";
+              else if (src.endsWith(".woff")) format = "format('woff')";
+              else if (src.endsWith(".ttf")) format = "format('truetype')";
+              styleEl.textContent = `@font-face { font-family: '${family}'; src: url('${src}') ${format}; font-weight: normal; font-style: normal; }`;
+              document.head.appendChild(styleEl);
+              fontStyleRefs.current[a._id] = styleEl;
+            } catch (err) {
+              console.warn("Failed to register uploaded font", err);
+            }
+          }
+          fontsToUse.push({
+            id: family,
+            name: a.originalName || family,
+            style: family,
+          });
         });
-        if (!res.ok) {
-          // don't break the editor if media list is unavailable
-          return;
-        }
-        const json = await res.json();
-        const files = json.data || [];
-        // Simple heuristic: photos vs borders by filename or folder
-        const photos = files
-          .map((f) => f.url)
-          .filter((u) => /banner|service|temp|profile|u[12]/i.test(u));
-        const borders = files
-          .map((f) => f.url)
-          .filter((u) => /border|images|frame/i.test(u));
-        if (photos.length) setFetchedPhotos(photos);
-        if (borders.length) setFetchedBorders(borders);
+        setUploadedFonts(fontsToUse);
       } catch (err) {
         // ignore errors
       }
     };
 
-    fetchMedia();
+    fetchAssets();
 
     // Listen for cross-tab/local updates
     const onStorage = (e) => {
       if (e.key === "media_updated_at") {
-        fetchMedia();
+        fetchAssets();
       }
     };
     window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      // cleanup dynamically added font styles
+      Object.values(fontStyleRefs.current || {}).forEach((el) => {
+        try {
+          el.remove();
+        } catch (e) {}
+      });
+      fontStyleRefs.current = {};
+    };
   }, []);
 
   // If fetched photos become available and the user hasn't changed photo from the initial builtin,
@@ -230,6 +278,10 @@ const Editor = () => {
     fetchedBorders && fetchedBorders.length ? fetchedBorders : builtinBorders;
   const availablePhotos =
     fetchedPhotos && fetchedPhotos.length ? fetchedPhotos : builtinPhotos;
+  const availableFonts =
+    uploadedFonts && uploadedFonts.length
+      ? [...fonts, ...uploadedFonts]
+      : fonts;
 
   function drawFields(
     ctx,
@@ -458,7 +510,7 @@ const Editor = () => {
                   border: "1px solid #e2e8f0",
                 }}
               >
-                {fonts.map((f) => (
+                {availableFonts.map((f) => (
                   <option key={f.id} value={f.id}>
                     {f.name}
                   </option>

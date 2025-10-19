@@ -25,6 +25,12 @@ if (!fs.existsSync(imagesDir)) {
 const uploadsDir = path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir);
+  // Ensure common subfolders exist for categorized assets
+  const categories = ["border", "adminPhoto", "font", "misc"];
+  categories.forEach((c) => {
+    const p = path.join(uploadsDir, c);
+    if (!fs.existsSync(p)) fs.mkdirSync(p, { recursive: true });
+  });
 }
 
 // Multer storage config for images

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import swal from "sweetalert";
 
 const NAV_ITEMS = [
   { key: "analytics", label: "Analytics" },
@@ -70,47 +71,173 @@ const AdminDashboard = () => {
   );
 };
 
-// Placeholder components for each section
-const AnalyticsSection = () => (
-  <div>
-    <h2 className="text-xl font-semibold mb-4">Website Analytics</h2>
-    {/* Stats and charts will go here */}
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-      <div className="bg-blue-50 rounded shadow p-4">
-        Total Users: <span className="font-bold">--</span>
-      </div>
-      <div className="bg-blue-50 rounded shadow p-4">
-        Templates Downloaded: <span className="font-bold">--</span>
-      </div>
-      <div className="bg-blue-50 rounded shadow p-4">
-        Most Popular Template: <span className="font-bold">--</span>
-      </div>
+// Analytics section: fetch backend data and compute simple metrics
+const AnalyticsSection = () => {
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(null);
+  const [totalUsers, setTotalUsers] = React.useState(null);
+  const [templatesCount, setTemplatesCount] = React.useState(null);
+  const [templatesDownloaded, setTemplatesDownloaded] = React.useState(null);
+  const [mostPopularTemplate, setMostPopularTemplate] = React.useState("--");
+
+  React.useEffect(() => {
+    const apiBase =
+      (import.meta.env && import.meta.env.VITE_API_URL) ||
+      "http://localhost:8000";
+
+    const token = localStorage.getItem("token");
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        // Users: admin-only endpoint
+        const usersRes = await fetch(`${apiBase}/api/users`, { headers });
+        if (!usersRes.ok)
+          throw new Error(`Failed to fetch users: ${usersRes.status}`);
+        const usersJson = await usersRes.json();
+        const users = usersJson.data || [];
+        setTotalUsers(Array.isArray(users) ? users.length : 0);
+
+        // Templates: admin-only endpoint
+        const tplRes = await fetch(`${apiBase}/api/templates`, { headers });
+        if (!tplRes.ok)
+          throw new Error(`Failed to fetch templates: ${tplRes.status}`);
+        const tplJson = await tplRes.json();
+        const templates = tplJson.data || [];
+        setTemplatesCount(Array.isArray(templates) ? templates.length : 0);
+
+        // Try to fetch transactions to compute downloads/popularity. If endpoint missing, fall back.
+        try {
+          const txRes = await fetch(`${apiBase}/api/transactions`, { headers });
+          if (txRes.ok) {
+            const txJson = await txRes.json();
+            const txs = txJson.data || [];
+            // Count template-like items (best-effort) and find most common item
+            const freq = {};
+            let downloads = 0;
+            txs.forEach((t) => {
+              const item = t.item || "";
+              // Heuristic: consider any transaction item that mentions 'Template' or matches a template name
+              if (
+                item.toLowerCase().includes("template") ||
+                templates.find((x) => x.name === item)
+              ) {
+                downloads += 1;
+                freq[item] = (freq[item] || 0) + 1;
+              }
+            });
+            setTemplatesDownloaded(downloads);
+            const most = Object.keys(freq).sort((a, b) => freq[b] - freq[a])[0];
+            setMostPopularTemplate(most || "--");
+          } else {
+            // No transactions endpoint: use best-effort fallback
+            setTemplatesDownloaded("N/A");
+            setMostPopularTemplate("--");
+          }
+        } catch (innerErr) {
+          // Transactions endpoint may not exist; silently fallback
+          setTemplatesDownloaded("N/A");
+          setMostPopularTemplate("--");
+        }
+      } catch (err) {
+        console.error("Analytics load error", err);
+        setError(err.message || "Failed to load analytics");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, []);
+
+  return (
+    <div>
+      <h2 className="text-xl font-semibold mb-4">Website Analytics</h2>
+      {loading ? (
+        <div className="text-sm text-gray-600">Loading analytics...</div>
+      ) : error ? (
+        <div className="text-sm text-red-600">Error: {error}</div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div className="bg-blue-50 rounded shadow p-4">
+              Total Users:{" "}
+              <span className="font-bold">{totalUsers ?? "--"}</span>
+            </div>
+            <div className="bg-blue-50 rounded shadow p-4">
+              Templates:{" "}
+              <span className="font-bold">{templatesCount ?? "--"}</span>
+            </div>
+            <div className="bg-blue-50 rounded shadow p-4">
+              Templates Downloaded:{" "}
+              <span className="font-bold">{templatesDownloaded ?? "--"}</span>
+            </div>
+          </div>
+
+          <div className="mb-6">
+            <div className="text-sm text-gray-600">Most Popular Template</div>
+            <div className="text-lg font-semibold">{mostPopularTemplate}</div>
+          </div>
+
+          <div className="h-48 flex items-center justify-center text-gray-400">
+            {/* Placeholder for charts; could wire in Chart.js later */}
+            <div className="text-center">
+              <div className="text-sm">Charting coming soon</div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
-    <div className="h-48 flex items-center justify-center text-gray-400">
-      [Analytics charts here]
-    </div>
-  </div>
-);
+  );
+};
 
 const TemplatesSection = () => {
   const [files, setFiles] = React.useState([]);
   const [fileInput, setFileInput] = React.useState(null);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState(null);
+  const [assetCategory, setAssetCategory] = React.useState("border");
 
   const apiBase =
     (import.meta.env && import.meta.env.VITE_API_URL) ||
     "http://localhost:8000";
 
-  const fetchFiles = async () => {
+  const ensureAdminToken = () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      swal("Not authorized", "Please sign in as admin to continue.", "warning");
+      navigate("/login");
+      throw new Error("No admin token");
+    }
+    return token;
+  };
+
+  const fetchFiles = async (category = "") => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${apiBase}/api/media`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      const token = ensureAdminToken();
+      const q = category ? `?category=${encodeURIComponent(category)}` : "";
+      const res = await fetch(`${apiBase}/api/assets${q}`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json?.message || "Failed to list media");
+      if (res.status === 401 || res.status === 403) {
+        swal("Session expired", "Please sign in again as admin.", "warning");
+        localStorage.removeItem("token");
+        localStorage.removeItem("isAdmin");
+        navigate("/login");
+        return;
+      }
+      const contentType = res.headers.get("content-type") || "";
+      const json = contentType.includes("application/json")
+        ? await res.json()
+        : null;
+      if (!res.ok) {
+        const msg =
+          json?.message || `Failed to list assets (status ${res.status})`;
+        throw new Error(msg);
+      }
       setFiles(json.data || []);
     } catch (err) {
       console.error("fetchFiles", err);
@@ -121,8 +248,8 @@ const TemplatesSection = () => {
   };
 
   React.useEffect(() => {
-    fetchFiles();
-  }, []);
+    fetchFiles(assetCategory);
+  }, [assetCategory]);
 
   // --- Template records management ---
   const [templates, setTemplates] = React.useState([]);
@@ -132,15 +259,23 @@ const TemplatesSection = () => {
 
   const fetchTemplates = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = ensureAdminToken();
       const res = await fetch(`${apiBase}/api/templates`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        headers: { Authorization: `Bearer ${token}` },
       });
+      if (res.status === 401 || res.status === 403) {
+        swal("Session expired", "Please sign in again as admin.", "warning");
+        localStorage.removeItem("token");
+        localStorage.removeItem("isAdmin");
+        navigate("/login");
+        return;
+      }
       const json = await res.json();
       if (!res.ok) throw new Error(json?.message || "Failed to load templates");
       setTemplates(json.data || []);
     } catch (err) {
       console.error("fetchTemplates", err);
+      setError(err.message || "Error loading templates");
     }
   };
 
@@ -151,12 +286,12 @@ const TemplatesSection = () => {
   const handleCreateTemplate = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem("token");
+      const token = ensureAdminToken();
       const res = await fetch(`${apiBase}/api/templates`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           name: tplName,
@@ -164,10 +299,17 @@ const TemplatesSection = () => {
           type: tplType,
         }),
       });
+      if (res.status === 401 || res.status === 403) {
+        swal("Session expired", "Please sign in again as admin.", "warning");
+        localStorage.removeItem("token");
+        localStorage.removeItem("isAdmin");
+        navigate("/login");
+        return;
+      }
       const json = await res.json();
       if (!res.ok) throw new Error(json?.message || "Create template failed");
       setTplName("");
-      fetchTemplates();
+      await fetchTemplates();
     } catch (err) {
       console.error("create template", err);
       setError(err.message || "Template create error");
@@ -177,14 +319,21 @@ const TemplatesSection = () => {
   const handleDeleteTemplate = async (id) => {
     if (!confirm("Delete template?")) return;
     try {
-      const token = localStorage.getItem("token");
+      const token = ensureAdminToken();
       const res = await fetch(`${apiBase}/api/templates/${id}`, {
         method: "DELETE",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        headers: { Authorization: `Bearer ${token}` },
       });
+      if (res.status === 401 || res.status === 403) {
+        swal("Session expired", "Please sign in again as admin.", "warning");
+        localStorage.removeItem("token");
+        localStorage.removeItem("isAdmin");
+        navigate("/login");
+        return;
+      }
       const json = await res.json();
       if (!res.ok) throw new Error(json?.message || "Delete failed");
-      fetchTemplates();
+      await fetchTemplates();
     } catch (err) {
       console.error("delete template", err);
       setError(err.message || "Template delete error");
@@ -196,18 +345,32 @@ const TemplatesSection = () => {
     if (!fileInput) return;
     const form = new FormData();
     form.append("file", fileInput);
+    form.append("category", assetCategory);
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${apiBase}/api/media`, {
+      const token = ensureAdminToken();
+      const res = await fetch(`${apiBase}/api/assets`, {
         method: "POST",
         body: form,
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        headers: { Authorization: `Bearer ${token}` },
       });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json?.message || "Upload failed");
+      if (res.status === 401 || res.status === 403) {
+        swal("Session expired", "Please sign in again as admin.", "warning");
+        localStorage.removeItem("token");
+        localStorage.removeItem("isAdmin");
+        navigate("/login");
+        return;
+      }
+      const contentType = res.headers.get("content-type") || "";
+      const json = contentType.includes("application/json")
+        ? await res.json()
+        : null;
+      if (!res.ok)
+        throw new Error(
+          json?.message || `Upload failed (status ${res.status})`
+        );
       // refresh list
-      fetchFiles();
+      await fetchFiles(assetCategory);
       // Notify editor via localStorage event (simple cross-tab update)
       localStorage.setItem("media_updated_at", Date.now().toString());
       setFileInput(null);
@@ -220,21 +383,28 @@ const TemplatesSection = () => {
     }
   };
 
-  const handleDelete = async (filename) => {
-    if (!confirm(`Delete ${filename}?`)) return;
+  const handleDelete = async (id) => {
+    if (!confirm("Delete this asset?")) return;
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
-      const res = await fetch(
-        `${apiBase}/api/media/${encodeURIComponent(filename)}`,
-        {
-          method: "DELETE",
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        }
-      );
+      const token = ensureAdminToken();
+      const res = await fetch(`${apiBase}/api/assets/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.status === 401 || res.status === 403) {
+        swal("Session expired", "Please sign in again as admin.", "warning");
+        localStorage.removeItem("token");
+        localStorage.removeItem("isAdmin");
+        navigate("/login");
+        return;
+      }
       const json = await res.json();
-      if (!res.ok) throw new Error(json?.message || "Delete failed");
-      fetchFiles();
+      if (!res.ok)
+        throw new Error(
+          json?.message || `Delete failed (status ${res.status})`
+        );
+      await fetchFiles(assetCategory);
       localStorage.setItem("media_updated_at", Date.now().toString());
     } catch (err) {
       console.error("delete", err);
@@ -249,9 +419,19 @@ const TemplatesSection = () => {
       <h2 className="text-xl font-semibold mb-4">Manage Templates & Media</h2>
       <div className="mb-4">
         <form onSubmit={handleUpload} className="flex gap-2 items-center">
+          <select
+            value={assetCategory}
+            onChange={(e) => setAssetCategory(e.target.value)}
+            className="border p-2 rounded"
+          >
+            <option value="border">Border</option>
+            <option value="adminPhoto">Admin Photo</option>
+            <option value="font">Font</option>
+            <option value="misc">Misc</option>
+          </select>
           <input
             type="file"
-            accept="image/*"
+            accept="*/*"
             onChange={(e) => setFileInput(e.target.files[0])}
           />
           <button
@@ -269,13 +449,22 @@ const TemplatesSection = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {files.map((f) => (
-          <div key={f.filename} className="bg-white p-3 rounded shadow">
+          <div key={f._id} className="bg-white p-3 rounded shadow">
             <img
-              src={f.url}
-              alt={f.filename}
+              src={
+                f.url && f.url.startsWith("/")
+                  ? `${
+                      (import.meta.env && import.meta.env.VITE_API_URL) ||
+                      "http://localhost:8000"
+                    }${f.url}`
+                  : f.url
+              }
+              alt={f.originalName || f.filename}
               className="w-full h-36 object-cover rounded mb-2"
             />
-            <div className="text-sm text-gray-700">{f.filename}</div>
+            <div className="text-sm text-gray-700">
+              {f.originalName || f.filename}
+            </div>
             <div className="flex gap-2 mt-2">
               <button
                 onClick={() => navigator.clipboard.writeText(f.url)}
@@ -284,7 +473,7 @@ const TemplatesSection = () => {
                 Copy URL
               </button>
               <button
-                onClick={() => handleDelete(f.filename)}
+                onClick={() => handleDelete(f._id)}
                 className="px-2 py-1 bg-red-100 text-red-700 rounded"
               >
                 Delete
@@ -372,9 +561,7 @@ const UsersSection = () => {
         setLoading(true);
         const token = localStorage.getItem("token");
         // Prefer VITE_API_URL when available, otherwise default to localhost backend
-        const apiBase =
-          (import.meta.env && import.meta.env.VITE_API_URL) ||
-          "http://localhost:8000";
+        const apiBase = import.meta.env.VITE_API_URL || "http://localhost:8000";
         const res = await fetch(`${apiBase}/api/users`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
@@ -427,6 +614,31 @@ const UsersSection = () => {
   }, []);
 
   const toggle = (id) => setExpanded((s) => ({ ...s, [id]: !s[id] }));
+
+  // Base URL for uploaded files (match backend host). Prefer VITE_API_URL if set.
+  const uploadsBase =
+    (
+      (import.meta.env && import.meta.env.VITE_API_URL) ||
+      "http://localhost:8000"
+    )
+      .toString()
+      .replace(/\/$/, "") + "/uploads";
+
+  const getProfileImageSrc = (img) => {
+    if (!img) return null;
+    // If it's already an absolute URL or data URI or starts with slash, use as-is
+    if (
+      typeof img === "string" &&
+      (img.startsWith("data:") ||
+        img.startsWith("http://") ||
+        img.startsWith("https://") ||
+        img.startsWith("/"))
+    ) {
+      return img;
+    }
+    // Otherwise build from uploads base and encode the filename
+    return `${uploadsBase}/${encodeURIComponent(img)}`;
+  };
 
   return (
     <div>
@@ -503,7 +715,7 @@ const UsersSection = () => {
                           <div>
                             {u.profileImage ? (
                               <img
-                                src={`/uploads/${u.profileImage}`}
+                                src={getProfileImageSrc(u.profileImage)}
                                 alt="profile"
                                 className="w-24 h-24 object-cover rounded"
                               />

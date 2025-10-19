@@ -9,6 +9,11 @@ const {
   deleteMedia,
 } = require("../Controller/mediaController");
 const {
+  uploadAsset,
+  listAssets,
+  deleteAsset,
+} = require("../Controller/assetController");
+const {
   updateUserProfileController,
   getUserProfileController,
   serveProfileImageController,
@@ -55,6 +60,20 @@ router.post(
 );
 router.get("/media", AuthSignIn, adminOnly, listMedia);
 router.delete("/media/:filename", AuthSignIn, adminOnly, deleteMedia);
+
+// Assets routes for categorized uploads (borders, adminPhoto, fonts)
+router.post(
+  "/assets",
+  AuthSignIn,
+  adminOnly,
+  uploadFile.single("file"),
+  uploadAsset
+);
+router.get("/assets", AuthSignIn, adminOnly, listAssets);
+router.delete("/assets/:id", AuthSignIn, adminOnly, deleteAsset);
+
+// Public listing for assets (so editor and normal users can fetch borders/admin photos)
+router.get("/assets/public", listAssets);
 
 // Template records CRUD (admin-only for create/update/delete)
 router.get("/templates", AuthSignIn, adminOnly, listTemplates);

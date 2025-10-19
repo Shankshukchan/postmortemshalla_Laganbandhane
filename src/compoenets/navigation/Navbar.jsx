@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { UserContext } from "../../UserContext";
 import { LanguageContext } from "../../LanguageContext";
@@ -26,21 +26,82 @@ const Navbar = () => {
       src.startsWith("blob:")
     )
       return src;
-    if (src.startsWith("/uploads/")) return src;
-    if (src.startsWith("uploads/")) return `/${src}`;
-    const normalized = src.replace(/\\/g, "/");
-    if (normalized.includes("/uploads/")) {
-      return encodeURI(normalized.slice(normalized.indexOf("/uploads/")));
+    const normalized = String(src).replace(/\\/g, "/");
+    // If already a full uploads URL
+    const uploadsIdx = normalized.indexOf("/uploads/");
+    if (uploadsIdx !== -1) {
+      const rel = normalized.slice(uploadsIdx + "/uploads/".length);
+      const encodedRel = rel.split("/").map(encodeURIComponent).join("/");
+      return `/uploads/${encodedRel}`;
     }
-    const parts = normalized.split("/");
-    const basename = parts[parts.length - 1] || src;
-    return encodeURI(`/uploads/${basename}`);
+    if (normalized.startsWith("/uploads/")) return normalized;
+    if (normalized.startsWith("uploads/")) {
+      const rel = normalized.slice("uploads/".length);
+      const encodedRel = rel.split("/").map(encodeURIComponent).join("/");
+      return `/uploads/${encodedRel}`;
+    }
+    // If value includes a category/filename like 'profile/abc.png' or 'misc/x'
+    if (normalized.includes("/")) {
+      const encodedRel = normalized
+        .split("/")
+        .map(encodeURIComponent)
+        .join("/");
+      return `/uploads/${encodedRel}`;
+    }
+    // bare filename -> profile
+    return `/uploads/profile/${encodeURIComponent(normalized)}`;
   };
   const [menuOpen, setMenuOpen] = useState(false);
   const { user } = useContext(UserContext);
+  // localStoredImage mirrors localStorage.userImage to cover cases where
+  // the UserContext hasn't updated yet (race after login). This lets the
+  // navbar show the image immediately.
+  const [localStoredImage, setLocalStoredImage] = useState(() => {
+    try {
+      return localStorage.getItem("userImage");
+    } catch (e) {
+      return null;
+    }
+  });
+
+  useEffect(() => {
+    const onStorage = (e) => {
+      if (!e) return;
+      if (e.key === "userImage" || e.key === "user") {
+        try {
+          const ui = localStorage.getItem("userImage");
+          setLocalStoredImage(ui);
+        } catch (err) {
+          setLocalStoredImage(null);
+        }
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
   const { language, setLanguage, t } = useContext(LanguageContext);
-  // Use image from context, always up-to-date
-  const profileImage = normalizeImagePath(user?.image);
+  // Use image from context if available; fall back to localStorage (so navbar shows
+  // the image immediately even before context effect runs) and finally the default.
+  const getLocalStoredImage = () => {
+    try {
+      const ui = localStorage.getItem("userImage");
+      if (ui) return ui;
+      const stored = localStorage.getItem("user");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && (parsed.image || parsed.profileImage))
+          return parsed.image || parsed.profileImage;
+      }
+    } catch (e) {
+      // ignore
+    }
+    return null;
+  };
+
+  // Prefer freshest source: context -> localStoredImage -> fallback getter
+  const profileImage = normalizeImagePath(
+    user?.image || localStoredImage || getLocalStoredImage()
+  );
   const isLoggedIn = !!user?.isLoggedIn;
 
   // No need for localStorage or effect, context handles updates
