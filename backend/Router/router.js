@@ -77,6 +77,8 @@ router.get("/assets/public", listAssets);
 
 // Template records CRUD (admin-only for create/update/delete)
 router.get("/templates", AuthSignIn, adminOnly, listTemplates);
+// Public templates listing (used by the frontend templates page)
+router.get("/templates/public", listTemplates);
 router.post("/templates", AuthSignIn, adminOnly, createTemplate);
 router.put("/templates/:id", AuthSignIn, adminOnly, updateTemplate);
 router.delete("/templates/:id", AuthSignIn, adminOnly, deleteTemplate);

@@ -3,9 +3,6 @@ import axios from "axios";
 import { LanguageContext } from "../../LanguageContext";
 import { useNavigate } from "react-router-dom";
 
-// Using jsonplaceholder as a free mock API for demonstration
-const API_URL = "https://jsonplaceholder.typicode.com/posts";
-
 const Templates = () => {
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -14,33 +11,31 @@ const Templates = () => {
   const { t } = useContext(LanguageContext);
 
   useEffect(() => {
-    axios
-      .get(API_URL)
-      .then((res) => {
-        // Map the mock data to fit the template structure
-        // We'll use userId as category, title as title, body as description
-        // Add a placeholder image for demonstration
-        const placeholderImages = [
-          "/images/banner.png",
-          "/images/leaf.png",
-          "/images/service.png",
-          "/images/temp.png",
-          "/images/banner(1)(1).png",
-        ];
-        const mapped = res.data.map((item, idx) => ({
-          id: item.id,
-          title: item.title,
-          description: item.body,
-          category: `Category ${item.userId}`,
-          image: placeholderImages[idx % placeholderImages.length],
+    const apiBase =
+      (import.meta.env && import.meta.env.VITE_API_URL) ||
+      "http://localhost:8000";
+    const fetchTemplates = async () => {
+      try {
+        setLoading(true);
+        const res = await axios.get(`${apiBase}/api/templates/public`);
+        const data = res.data && res.data.data ? res.data.data : [];
+        // Convert backend template model to UI-friendly shape
+        const mapped = (data || []).map((tpl) => ({
+          id: tpl._id,
+          title: tpl.name,
+          description: tpl.description || "",
+          category: tpl.category || "Uncategorized",
+          image: tpl.media || "/images/temp.png",
         }));
         setTemplates(mapped);
-        setLoading(false);
-      })
-      .catch((err) => {
+      } catch (err) {
+        console.error("Failed to load templates", err);
         setError(t.fetchTemplatesFailed || "Failed to fetch templates");
+      } finally {
         setLoading(false);
-      });
+      }
+    };
+    fetchTemplates();
   }, []);
 
   // Group templates by category
