@@ -1,5 +1,6 @@
 import React, { useContext } from "react";
 import { LanguageContext } from "../../LanguageContext";
+import { Link } from "react-router-dom";
 
 const HeroSection = () => {
   const { t } = useContext(LanguageContext);
@@ -12,18 +13,18 @@ const HeroSection = () => {
         </h1>
         <p className="text-lg md:text-xl font-medium">{t.heroParagraph}</p>
         <div className="flex gap-4 mt-4">
-          <a
-            href="#"
+          <Link
+            to="/pricing"
             className="bg-[#D4AF37] text-[#6E1E1E] px-6 py-3 rounded-full font-bold shadow hover:bg-[#bfa134] transition"
           >
             {t.heroPricing}
-          </a>
-          <a
-            href="#"
+          </Link>
+          <Link
+           to="/templates"
             className="border border-[#6E1E1E] text-[#6E1E1E] px-6 py-3 rounded-full font-bold hover:bg-[#6E1E1E] hover:text-[white] transition"
           >
             {t.heroTemplates}
-          </a>
+          </Link>
         </div>
       </div>
       {/* Right: Banner Image */}

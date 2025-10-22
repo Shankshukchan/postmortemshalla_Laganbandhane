@@ -1,5 +1,6 @@
 // Timeline Section
 import React, { useContext, useState, useRef, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { LanguageContext } from "../../LanguageContext";
 import CountUp from "react-countup";
 
@@ -132,22 +133,24 @@ function TestimonialsSection() {
 
 // Call-to-Action Banner
 function CTABanner() {
-  const { t } = useContext(LanguageContext);
+  const { t, language } = useContext(LanguageContext);
   return (
     <section className="py-10 px-4 bg-gradient-to-r from-[#D4AF37]/90 to-[#6E1E1E]/90 text-white text-center rounded-2xl shadow-xl my-12 mx-2 animate-pulse">
       <h2 className="text-3xl font-extrabold mb-2">
         {t.ctaTitle || "Ready to Make Your Event Unforgettable?"}
       </h2>
+      {/* Debug: show current language to confirm switcher works (remove in production) */}
+      <div className="text-sm opacity-80 mb-2">Language: {language}</div>
       <p className="mb-4">
         {t.ctaParagraph ||
           "Join thousands of happy couples and create your perfect invitation today!"}
       </p>
-      <a
-        href="/signup"
+      <Link
+        to="/signup"
         className="inline-block bg-white text-[#6E1E1E] font-bold px-8 py-3 rounded-full shadow hover:bg-[#D4AF37] hover:text-white transition"
       >
         {t.ctaButton || "Get Started Free"}
-      </a>
+      </Link>
     </section>
   );
 }

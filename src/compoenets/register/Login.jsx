@@ -253,7 +253,7 @@ const Login = () => {
               )}
             </div>
             <p className="text-[12px] text-right font-bold text-[#6E1E1E] hover:text-[#D4AF37] hover:text-shadow-[_1px_1px_rgb(110_30_30_/_1)] hover:text-shadow-[_-1px_-1px_rgb(110_30_30_/_1)]">
-              <a href="">{t.forgotPassword}</a>
+              <Link to="/forgot-password">{t.forgotPassword}</Link>
             </p>
             <div>
               <input

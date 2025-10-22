@@ -13,6 +13,8 @@
     "@hookform/resolvers": "^5.2.2",
     "@tailwindcss/vite": "^4.1.13",
     "axios": "^1.12.2",
+    "docx": "^8.5.0",
+    "jspdf": "^2.5.2",
     "react": "^19.1.1",
     "react-countup": "^6.5.3",
     "react-dom": "^19.1.1",

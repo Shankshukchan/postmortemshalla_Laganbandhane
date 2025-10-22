@@ -1,4 +1,5 @@
 import React, { useContext } from "react";
+import { Link } from "react-router-dom";
 import { LanguageContext } from "../../LanguageContext";
 
 const Footer = () => {
@@ -19,36 +20,36 @@ const Footer = () => {
             <h4 className="text-lg font-semibold mb-3">{t.quickLinks}</h4>
             <ul className="space-y-2">
               <li>
-                <a
-                  href="#"
+                <Link
+                  to="/"
                   className="hover:text-blue-400 transition-colors duration-200"
                 >
                   {t.home}
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="#features"
+                <Link
+                  to="/features"
                   className="hover:text-blue-400 transition-colors duration-200"
                 >
                   {t.whyChooseUs}
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="#about"
+                <Link
+                  to="/about"
                   className="hover:text-blue-400 transition-colors duration-200"
                 >
                   {t.aboutUs}
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="#contact"
+                <Link
+                  to="/contact"
                   className="hover:text-blue-400 transition-colors duration-200"
                 >
                   {t.contactUs}
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -76,33 +77,33 @@ const Footer = () => {
           <div className="w-full md:w-1/6 ">
             <h4 className="text-lg font-semibold mb-3">{t.followUs}</h4>
             <div className="flex justify-center gap-5 space-x-4">
-              <a
-                href="#"
+              <Link
+                to="/facebook"
                 aria-label="Facebook"
                 className="hover:text-blue-500 text-2xl transition-colors duration-200"
               >
                 <span role="img" aria-label="Facebook">
                   📘
                 </span>
-              </a>
-              <a
-                href="#"
+              </Link>
+              <Link
+                to="/twitter"
                 aria-label="Twitter"
                 className="hover:text-blue-400 text-2xl transition-colors duration-200"
               >
                 <span role="img" aria-label="Twitter">
                   🐦
                 </span>
-              </a>
-              <a
-                href="#"
+              </Link>
+              <Link
+                to="/instagram"
                 aria-label="Instagram"
                 className="hover:text-pink-400 text-2xl transition-colors duration-200"
               >
                 <span role="img" aria-label="Instagram">
                   📸
                 </span>
-              </a>
+              </Link>
             </div>
           </div>
         </div>

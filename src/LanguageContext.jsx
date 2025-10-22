@@ -11,6 +11,11 @@ const translations = {
     contactUs: "Contact Us",
     login: "Login / Register",
     logout: "Logout",
+    // Pricing / CTA / Stats (EN)
+    ctaTitle: "Ready to Make Your Event Unforgettable?",
+    ctaParagraph:
+      "Join thousands of happy couples and create your perfect invitation today!",
+    ctaButton: "Get Started Free",
 
     // Dashboard / user
     latestPurchases: "Latest Purchases",
@@ -194,16 +199,6 @@ const translations = {
     pricingDesc:
       "Choose a plan that fits your event and budget. Upgrade anytime as your needs grow!",
     comparePlans: "Compare Plans",
-    // CTA (Marathi)
-    ctaTitle: "आपला कार्यक्रम अविस्मरणीय बनवायला तयार आहात?",
-    ctaParagraph:
-      "हजारो आनंदी जोडप्यांमध्ये सामील व्हा आणि आजच आपले परिपूर्ण आमंत्रण तयार करा!",
-    ctaButton: "मुफ्त सुरू करा",
-    ourImpact: "Our Impact",
-    happyCouplesLabel: "Happy Couples",
-    templatesLabel: "Templates",
-    averageRatingLabel: "Average Rating",
-    featureLabel: "Feature",
     // Pricing plan labels (EN fallback)
     plan_starter_name: "Starter",
     plan_starter_features: [
@@ -301,7 +296,7 @@ const translations = {
     // Editor
     templateEditorTitle: "Template Editor",
     chooseBorder: "Choose Border:",
-    chooseAdminPhoto: "Choose Admin Photo:",
+    chooseAdminPhoto: "gods image",
     layoutLabel: "Layout:",
     fontLabel: "Font:",
     editBiodataFields: "Edit Biodata Fields:",
@@ -517,6 +512,11 @@ const translations = {
     pricingDesc:
       "आपल्या कार्यक्रमासाठी आणि बजेटसह सुसंगत योजना निवडा. आपल्याला गरज वाढल्यास आपण कधीही अपग्रेड करू शकता!",
     comparePlans: "योजना तुलना करा",
+    // CTA (Marathi)
+    ctaTitle: "आपला कार्यक्रम अविस्मरणीय बनवायला तयार आहात?",
+    ctaParagraph:
+      "हजारो आनंदी जोडप्यांमध्ये सामील व्हा आणि आजच आपले परिपूर्ण आमंत्रण तयार करा!",
+    ctaButton: "मुफ्त सुरू करा",
     // Impact labels (Marathi)
     ourImpact: "आमचा परिणाम",
     happyCouplesLabel: "आनंदी जोडपे",

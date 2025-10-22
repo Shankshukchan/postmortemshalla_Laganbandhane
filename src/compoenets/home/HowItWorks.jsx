@@ -1,6 +1,7 @@
 import React, { useContext } from "react";
 import { LanguageContext } from "../../LanguageContext";
 import { RiPagesLine } from "react-icons/ri";
+import { Link } from "react-router-dom";
 
 const HowItWorks = () => {
   const { t } = useContext(LanguageContext);
@@ -71,9 +72,10 @@ const HowItWorks = () => {
         </div>
       </div>
       <div className="text-center mt-12 relative z-20">
+        <Link to="/templates">
         <button className="bg-[#6E1E1E] text-white px-8 py-3 rounded-full font-bold shadow hover:bg-[#D4AF37] hover:text-[#6E1E1E] transition-colors duration-200">
           {t.exploreTemplates}
-        </button>
+        </button></Link>
       </div>
     </section>
   );

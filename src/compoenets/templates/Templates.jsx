@@ -20,13 +20,24 @@ const Templates = () => {
         const res = await axios.get(`${apiBase}/api/templates/public`);
         const data = res.data && res.data.data ? res.data.data : [];
         // Convert backend template model to UI-friendly shape
-        const mapped = (data || []).map((tpl) => ({
-          id: tpl._id,
-          title: tpl.name,
-          description: tpl.description || "",
-          category: tpl.category || "Uncategorized",
-          image: tpl.media || "/images/temp.png",
-        }));
+        const mapped = (data || []).map((tpl) => {
+          // normalize backend template types to frontend UI modes
+          const rawType = (tpl.type || "").toString().toLowerCase();
+          const uiType =
+            rawType === "layout" ||
+            rawType === "without-image" ||
+            rawType === "without_image"
+              ? "without-image"
+              : "with-image"; // default to allowing user image
+          return {
+            id: tpl._id,
+            title: tpl.name,
+            description: tpl.description || "",
+            category: tpl.category || "Uncategorized",
+            image: tpl.media || "/images/temp.png",
+            type: uiType,
+          };
+        });
         setTemplates(mapped);
       } catch (err) {
         console.error("Failed to load templates", err);
